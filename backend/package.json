@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --runInBand --detectOpenHandles --forceExit",
+    "audit": "node tests/verify_all_endpoints.js",
     "seed": "node scripts/seed.js"
   },
   "keywords": [
