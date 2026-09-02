@@ -1,6 +1,6 @@
 ﻿{
   "info": {
-    "_postman_id": "sof-backend-collection-v4",
+    "_postman_id": "sof-backend-collection-v5",
     "name": "Shifting Orbits Foundation - Backend API",
     "description": "API collection for Unified Student Lifecycle & Career Readiness Platform",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -91,22 +91,6 @@
         },
         {
           "name": "2.2 Register Coordinator",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data.accessToken) {",
-                  "        pm.environment.set('coordinatorToken', jsonData.data.accessToken);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -349,7 +333,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"category\": \"career\",\n  \"title\": \"Guidance on Engineering College Applications\",\n  \"description\": \"I would like advice on entrance examination preparation and fee grants for Computer Science programs.\",\n  \"priority\": \"high\"\n}"
+              "raw": "{\n  \"category\": \"career\",\n  \"title\": \"Guidance on Engineering College Applications\",\n  \"description\": \"I would like advice on entrance exam preparation and fee grants for Computer Science programs.\",\n  \"priority\": \"high\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/support-requests",
@@ -384,7 +368,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"type\": \"in_person\",\n  \"notes\": \"Met with student at Bangalore learning center. Discussed math progress and college options.\",\n  \"summary\": \"Student is dedicated; recommended solving 3 sample papers per week.\",\n  \"concerns\": [\"Trigonometry concepts\", \"Time management during mock tests\"],\n  \"actionItems\": [\n    {\n      \"description\": \"Complete 3 math practice tests\",\n      \"isCompleted\": false\n    }\n  ],\n  \"nextFollowUpDate\": \"2026-03-15\",\n  \"followUpTitle\": \"Review Math Sample Papers Results\",\n  \"followUpPriority\": \"high\"\n}"
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"type\": \"in_person\",\n  \"notes\": \"Discussed math progress and college options with Rahul at Bangalore learning center.\",\n  \"summary\": \"Student is dedicated; recommended solving 3 sample papers per week.\",\n  \"concerns\": [\"Trigonometry concepts\", \"Time management during mock tests\"],\n  \"actionItems\": [\n    {\n      \"description\": \"Complete 3 math practice tests\",\n      \"isCompleted\": false\n    }\n  ],\n  \"nextFollowUpDate\": \"2026-03-15\",\n  \"followUpTitle\": \"Review Math Sample Papers Results\",\n  \"followUpPriority\": \"high\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/interactions",
@@ -420,6 +404,86 @@
               "raw": "{{baseUrl}}/api/v1/followups/today",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "followups", "today"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Coordinator Domain & 360 View",
+      "item": [
+        {
+          "name": "5.1 Coordinator Dashboard (Metrics & Attention List)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coordinator/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "coordinator", "dashboard"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 Get Assigned Students with Priority Scores",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coordinator/students",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "coordinator", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.3 Student 360 Profile (Full Aggregate View)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coordinator/students/{{studentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "coordinator", "students", "{{studentId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.4 Early Attention Required Students List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coordinator/attention",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "coordinator", "attention"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.5 Student Attention Factor Breakdown",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coordinator/students/{{studentId}}/attention",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "coordinator", "students", "{{studentId}}", "attention"]
             }
           },
           "response": []
