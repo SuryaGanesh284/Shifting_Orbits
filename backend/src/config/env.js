@@ -10,7 +10,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   MONGO_URI: z.string().default('mongodb://127.0.0.1:27017/shifting_orbits'),
   JWT_ACCESS_SECRET: z.string().default('sof_jwt_access_super_secret_key_2026_change_in_production'),
-  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('24h'),
   JWT_REFRESH_SECRET: z.string().default('sof_jwt_refresh_super_secret_key_2026_change_in_production'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().default('http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173'),
