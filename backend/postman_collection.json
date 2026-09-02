@@ -1,6 +1,6 @@
 ﻿{
   "info": {
-    "_postman_id": "sof-backend-collection-v5",
+    "_postman_id": "sof-backend-collection-v6",
     "name": "Shifting Orbits Foundation - Backend API",
     "description": "API collection for Unified Student Lifecycle & Career Readiness Platform",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -414,7 +414,7 @@
       "name": "5. Coordinator Domain & 360 View",
       "item": [
         {
-          "name": "5.1 Coordinator Dashboard (Metrics & Attention List)",
+          "name": "5.1 Coordinator Dashboard",
           "request": {
             "method": "GET",
             "header": [
@@ -472,18 +472,53 @@
             }
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "6. Real-Time Notifications",
+      "item": [
         {
-          "name": "5.5 Student Attention Factor Breakdown",
+          "name": "6.1 Get Notifications List",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/coordinator/students/{{studentId}}/attention",
+              "raw": "{{baseUrl}}/api/v1/notifications",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "coordinator", "students", "{{studentId}}", "attention"]
+              "path": ["api", "v1", "notifications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Get Unread Notification Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "unread-count"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.3 Mark All Notifications As Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "read-all"]
             }
           },
           "response": []
