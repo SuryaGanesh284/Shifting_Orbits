@@ -1,6 +1,6 @@
 ﻿{
   "info": {
-    "_postman_id": "sof-backend-collection-v2",
+    "_postman_id": "sof-backend-collection-v3",
     "name": "Shifting Orbits Foundation - Backend API",
     "description": "API collection for Unified Student Lifecycle & Career Readiness Platform",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -18,8 +18,7 @@
               "raw": "{{baseUrl}}/",
               "host": ["{{baseUrl}}"],
               "path": [""]
-            },
-            "description": "Returns API server information and version"
+            }
           },
           "response": []
         },
@@ -32,8 +31,7 @@
               "raw": "{{baseUrl}}/api/v1/health",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "health"]
-            },
-            "description": "Returns health status, uptime, and database connection state"
+            }
           },
           "response": []
         },
@@ -46,8 +44,7 @@
               "raw": "{{baseUrl}}/api/v1/non-existent",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "non-existent"]
-            },
-            "description": "Verifies central ApiError 404 response handling"
+            }
           },
           "response": []
         }
@@ -78,10 +75,7 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -91,36 +85,16 @@
               "raw": "{{baseUrl}}/api/v1/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "register"]
-            },
-            "description": "Registers a new student account and returns JWT access + refresh tokens"
+            }
           },
           "response": []
         },
         {
           "name": "2.2 Register Coordinator",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data.accessToken) {",
-                  "        pm.environment.set('coordinatorToken', jsonData.data.accessToken);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -130,8 +104,7 @@
               "raw": "{{baseUrl}}/api/v1/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "register"]
-            },
-            "description": "Registers a new coordinator account"
+            }
           },
           "response": []
         },
@@ -157,10 +130,7 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -170,8 +140,7 @@
               "raw": "{{baseUrl}}/api/v1/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "login"]
-            },
-            "description": "Authenticates user and returns access + refresh tokens"
+            }
           },
           "response": []
         },
@@ -180,46 +149,22 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/me",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "me"]
-            },
-            "description": "Returns profile of currently authenticated user using Bearer token"
+            }
           },
           "response": []
         },
         {
           "name": "2.5 Refresh Access Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data && jsonData.data.accessToken) {",
-                  "        pm.environment.set('accessToken', jsonData.data.accessToken);",
-                  "        pm.environment.set('refreshToken', jsonData.data.refreshToken);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -229,8 +174,7 @@
               "raw": "{{baseUrl}}/api/v1/auth/refresh",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "refresh"]
-            },
-            "description": "Issues new access token and rotates refresh token"
+            }
           },
           "response": []
         },
@@ -239,17 +183,233 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/logout",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Student Domain",
+      "item": [
+        {
+          "name": "3.1 Get Student Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Update Student Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"education\": {\n    \"currentGrade\": \"Grade 11\",\n    \"institution\": \"Government PU College, Bangalore\",\n    \"stream\": \"Science (PCMC)\",\n    \"graduationYear\": 2026\n  },\n  \"interests\": [\"Computer Programming\", \"Mathematics\", \"Robotics\"],\n  \"aspirations\": {\n    \"targetCareer\": \"Software Engineer\",\n    \"higherEducationGoal\": \"B.Tech in Computer Science\"\n  },\n  \"contact\": {\n    \"parentName\": \"Ramesh Kumar\",\n    \"parentPhone\": \"+919876500000\",\n    \"address\": \"123 Learning Center Road, Bangalore\"\n  }\n}"
             },
-            "description": "Revokes refresh token and clears session cookie"
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 Get Student Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "dashboard"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.4 Get Student Journey (Sethu/Stambha Roadmap)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/journey",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "journey"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.5 Get Student Progress & Academic Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "progress"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.6 Add Academic Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"academicYear\": \"2025-2026\",\n  \"grade\": \"Grade 11\",\n  \"term\": \"Mid-Term\",\n  \"subject\": \"Mathematics\",\n  \"score\": 90,\n  \"attendance\": 96,\n  \"strengths\": [\"Algebra\", \"Geometry\"],\n  \"areasForImprovement\": [\"Trigonometry\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/academic-records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "academic-records"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.7 Get Academic Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/academic-records",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "academic-records"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.8 Add Skill with Evidence",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"JavaScript\",\n  \"category\": \"technical\",\n  \"level\": \"intermediate\",\n  \"evidence\": [\n    {\n      \"title\": \"Calculator & Portfolio App\",\n      \"type\": \"project\",\n      \"url\": \"https://github.com/rahul/projects\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "skills"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.9 Get Skills List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "skills"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.10 Create Goal with Milestones",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Score >85% in Grade 11 Final Examinations\",\n  \"category\": \"academic\",\n  \"targetDate\": \"2026-03-31\",\n  \"milestones\": [\n    { \"title\": \"Complete Math syllabus revision\", \"isCompleted\": true },\n    { \"title\": \"Solve 5 previous year question papers\", \"isCompleted\": false }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/goals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "goals"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.11 Get Goals List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/goals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "goals"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.12 Get Career Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/career-profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "career-profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.13 Get Career Readiness & Skill Gap Analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/career-readiness",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "students", "me", "career-readiness"]
+            }
           },
           "response": []
         }
@@ -269,11 +429,6 @@
     },
     {
       "key": "refreshToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "coordinatorToken",
       "value": "",
       "type": "string"
     }
