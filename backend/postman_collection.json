@@ -1,0 +1,64 @@
+﻿{
+  "info": {
+    "_postman_id": "sof-backend-collection-v1",
+    "name": "Shifting Orbits Foundation - Backend API",
+    "description": "API collection for Unified Student Lifecycle & Career Readiness Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Core & Health",
+      "item": [
+        {
+          "name": "1. Root Welcome API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Returns API server information and version"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health"]
+            },
+            "description": "Returns health status, uptime, and database connection state"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Not Found (404 Test)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/non-existent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "non-existent"]
+            },
+            "description": "Verifies central ApiError 404 response handling"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ]
+}
