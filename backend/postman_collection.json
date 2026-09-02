@@ -1,8 +1,8 @@
 ﻿{
   "info": {
-    "_postman_id": "sof-backend-collection-v7",
+    "_postman_id": "sof-backend-collection-v8",
     "name": "Shifting Orbits Foundation - Backend API",
-    "description": "API collection for Unified Student Lifecycle & Career Readiness Platform",
+    "description": "Unified Student Lifecycle & Career Readiness Platform API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -14,26 +14,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/",
-              "host": ["{{baseUrl}}"],
-              "path": [""]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
+          }
         },
         {
           "name": "1.2 Health Check",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "health"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/health", "host": ["{{baseUrl}}"], "path": ["api", "v1", "health"] }
+          }
         }
       ]
     },
@@ -44,92 +34,57 @@
           "name": "2.1 Register Student",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Rahul Kumar\",\n  \"email\": \"rahul.student@sof.org\",\n  \"password\": \"Password123!\",\n  \"role\": \"student\",\n  \"phone\": \"+919876543210\",\n  \"centerId\": \"SOF-BLR-01\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "register"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] }
+          }
         },
         {
           "name": "2.2 Register Coordinator",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Priya Sharma\",\n  \"email\": \"priya.coordinator@sof.org\",\n  \"password\": \"Coordinator123!\",\n  \"role\": \"coordinator\",\n  \"phone\": \"+919876543211\",\n  \"centerId\": \"SOF-BLR-01\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "register"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] }
+          }
         },
         {
           "name": "2.3 Login User (Student)",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"rahul.student@sof.org\",\n  \"password\": \"Password123!\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "login"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
         },
         {
           "name": "2.4 Login Coordinator",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"priya.coordinator@sof.org\",\n  \"password\": \"Coordinator123!\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "login"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
         },
         {
           "name": "2.5 Get Current User (/auth/me)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "me"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "me"] }
+          }
         }
       ]
     },
@@ -140,16 +95,9 @@
           "name": "3.1 Get Student Profile",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/students/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "students", "me"] }
+          }
         },
         {
           "name": "3.2 Update Student Profile",
@@ -163,28 +111,16 @@
               "mode": "raw",
               "raw": "{\n  \"education\": {\n    \"currentGrade\": \"Grade 11\",\n    \"institution\": \"Government PU College, Bangalore\",\n    \"stream\": \"Science (PCMC)\",\n    \"graduationYear\": 2026\n  },\n  \"interests\": [\"Computer Programming\", \"Mathematics\", \"Robotics\"],\n  \"aspirations\": {\n    \"targetCareer\": \"Software Engineer\",\n    \"higherEducationGoal\": \"B.Tech in Computer Science\"\n  },\n  \"contact\": {\n    \"parentName\": \"Ramesh Kumar\",\n    \"parentPhone\": \"+919876500000\",\n    \"address\": \"123 Learning Center Road, Bangalore\"\n  }\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/students/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "students", "me"] }
+          }
         },
         {
           "name": "3.3 Get Student Dashboard",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me/dashboard",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me", "dashboard"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/students/me/dashboard", "host": ["{{baseUrl}}"], "path": ["api", "v1", "students", "me", "dashboard"] }
+          }
         }
       ]
     },
@@ -203,13 +139,8 @@
               "mode": "raw",
               "raw": "{\n  \"category\": \"career\",\n  \"title\": \"Guidance on Engineering College Applications\",\n  \"description\": \"I would like advice on entrance exam preparation and fee grants for Computer Science programs.\",\n  \"priority\": \"high\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/support-requests",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "support-requests"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/support-requests", "host": ["{{baseUrl}}"], "path": ["api", "v1", "support-requests"] }
+          }
         },
         {
           "name": "4.2 Record Interaction (Coordinator)",
@@ -223,28 +154,8 @@
               "mode": "raw",
               "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"type\": \"in_person\",\n  \"notes\": \"Discussed math exam preparation and engineering career aspirations with Rahul.\",\n  \"summary\": \"Student is motivated; recommended 3 sample papers per week.\",\n  \"concerns\": [\"Trigonometry concepts\"],\n  \"actionItems\": [\n    { \"description\": \"Complete 3 math practice tests\", \"isCompleted\": false }\n  ],\n  \"nextFollowUpDate\": \"2026-03-15\",\n  \"followUpTitle\": \"Review Math Sample Papers Results\",\n  \"followUpPriority\": \"high\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/interactions",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "interactions"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "4.3 Get Follow-Ups",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/followups",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "followups"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/interactions", "host": ["{{baseUrl}}"], "path": ["api", "v1", "interactions"] }
+          }
         }
       ]
     },
@@ -255,31 +166,17 @@
           "name": "5.1 Coordinator Dashboard",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/coordinator/dashboard",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "coordinator", "dashboard"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/coordinator/dashboard", "host": ["{{baseUrl}}"], "path": ["api", "v1", "coordinator", "dashboard"] }
+          }
         },
         {
           "name": "5.2 Student 360 Profile",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/coordinator/students/{{studentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "coordinator", "students", "{{studentId}}"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/coordinator/students/{{studentId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "coordinator", "students", "{{studentId}}"] }
+          }
         }
       ]
     },
@@ -290,16 +187,9 @@
           "name": "6.1 Get Notifications List",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/notifications",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "notifications"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications", "host": ["{{baseUrl}}"], "path": ["api", "v1", "notifications"] }
+          }
         }
       ]
     },
@@ -307,7 +197,7 @@
       "name": "7. AI Intelligence Layer",
       "item": [
         {
-          "name": "7.1 AI Action Plan Generator (Student/Coord)",
+          "name": "7.1 AI Action Plan Generator",
           "request": {
             "method": "POST",
             "header": [
@@ -318,16 +208,11 @@
               "mode": "raw",
               "raw": "{\n  \"focusArea\": \"Software Engineer\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/ai/action-plan",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "ai", "action-plan"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/action-plan", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ai", "action-plan"] }
+          }
         },
         {
-          "name": "7.2 AI Career Skill Gap Matcher",
+          "name": "7.2 AI Career Skill Matcher",
           "request": {
             "method": "POST",
             "header": [
@@ -338,43 +223,69 @@
               "mode": "raw",
               "raw": "{\n  \"targetCareer\": \"Software Engineer\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/ai/career-match",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "ai", "career-match"]
-            }
-          },
-          "response": []
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/career-match", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ai", "career-match"] }
+          }
         },
         {
-          "name": "7.3 AI Smart Nudges (Student)",
+          "name": "7.3 AI Smart Nudges",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/ai/nudges",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "ai", "nudges"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/nudges", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ai", "nudges"] }
+          }
         },
         {
-          "name": "7.4 AI Student Briefing Summary (Coordinator)",
+          "name": "7.4 AI Student Briefing (Coordinator)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/ai/student-summary/{{studentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "ai", "student-summary", "{{studentId}}"]
-            }
-          },
-          "response": []
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/student-summary/{{studentId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ai", "student-summary", "{{studentId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Institutional Analytics & Reports",
+      "item": [
+        {
+          "name": "8.1 Institutional Overview",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/analytics/overview", "host": ["{{baseUrl}}"], "path": ["api", "v1", "analytics", "overview"] }
+          }
+        },
+        {
+          "name": "8.2 Center Comparison Analytics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/analytics/centers", "host": ["{{baseUrl}}"], "path": ["api", "v1", "analytics", "centers"] }
+          }
+        },
+        {
+          "name": "8.3 Center Details (SOF-BLR-01)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/analytics/centers/SOF-BLR-01", "host": ["{{baseUrl}}"], "path": ["api", "v1", "analytics", "centers", "SOF-BLR-01"] }
+          }
+        },
+        {
+          "name": "8.4 Export At-Risk Students (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/analytics/export/at_risk_students", "host": ["{{baseUrl}}"], "path": ["api", "v1", "analytics", "export", "at_risk_students"] }
+          }
+        },
+        {
+          "name": "8.5 Export Center Summary (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/analytics/export/center_summary?format=csv", "host": ["{{baseUrl}}"], "path": ["api", "v1", "analytics", "export", "center_summary"], "query": [{ "key": "format", "value": "csv" }] }
+          }
         }
       ]
     }

@@ -1,0 +1,56 @@
+﻿version: '3.8'
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: sof-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=shifting_orbits
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sof-network
+
+  # Shifting Orbits Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sof-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/shifting_orbits
+      - JWT_ACCESS_SECRET=sof_jwt_access_super_secret_key_2026_change_in_production
+      - JWT_ACCESS_EXPIRES_IN=24h
+      - JWT_REFRESH_SECRET=sof_jwt_refresh_super_secret_key_2026_change_in_production
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - CORS_ORIGIN=http://localhost:3000,http://localhost:5173
+      - AI_PROVIDER=gemini
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - LOG_LEVEL=info
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - sof-network
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  sof-network:
+    driver: bridge
