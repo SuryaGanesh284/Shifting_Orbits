@@ -13,6 +13,9 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 // Routes
 const authRoutes = require('./routes/auth.routes');
 const studentRoutes = require('./routes/student.routes');
+const supportRoutes = require('./routes/support.routes');
+const interactionRoutes = require('./routes/interactions.routes');
+const followUpRoutes = require('./routes/followups.routes');
 
 const app = express();
 
@@ -97,6 +100,9 @@ app.get('/api/v1/health', (req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/students', studentRoutes);
+app.use('/api/v1/support-requests', supportRoutes);
+app.use('/api/v1/interactions', interactionRoutes);
+app.use('/api/v1/followups', followUpRoutes);
 
 // 404 Handler
 app.use(notFoundHandler);

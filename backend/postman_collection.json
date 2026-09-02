@@ -1,6 +1,6 @@
 ﻿{
   "info": {
-    "_postman_id": "sof-backend-collection-v3",
+    "_postman_id": "sof-backend-collection-v4",
     "name": "Shifting Orbits Foundation - Backend API",
     "description": "API collection for Unified Student Lifecycle & Career Readiness Platform",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -91,6 +91,22 @@
         },
         {
           "name": "2.2 Register Coordinator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.environment.set('coordinatorToken', jsonData.data.accessToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -109,7 +125,7 @@
           "response": []
         },
         {
-          "name": "2.3 Login User",
+          "name": "2.3 Login User (Student)",
           "event": [
             {
               "listen": "test",
@@ -119,7 +135,6 @@
                   "    var jsonData = pm.response.json();",
                   "    if (jsonData.data && jsonData.data.accessToken) {",
                   "        pm.environment.set('accessToken', jsonData.data.accessToken);",
-                  "        pm.environment.set('refreshToken', jsonData.data.refreshToken);",
                   "    }",
                   "}"
                 ],
@@ -145,7 +160,42 @@
           "response": []
         },
         {
-          "name": "2.4 Get Current User (/auth/me)",
+          "name": "2.4 Login Coordinator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.environment.set('coordinatorToken', jsonData.data.accessToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"priya.coordinator@sof.org\",\n  \"password\": \"Coordinator123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Get Current User (/auth/me)",
           "request": {
             "method": "GET",
             "header": [
@@ -155,40 +205,6 @@
               "raw": "{{baseUrl}}/api/v1/auth/me",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "me"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "2.5 Refresh Access Token",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/refresh",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "refresh"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "2.6 Logout User",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "auth", "logout"]
             }
           },
           "response": []
@@ -249,7 +265,7 @@
           "response": []
         },
         {
-          "name": "3.4 Get Student Journey (Sethu/Stambha Roadmap)",
+          "name": "3.4 Get Student Journey Roadmap",
           "request": {
             "method": "GET",
             "header": [
@@ -264,22 +280,7 @@
           "response": []
         },
         {
-          "name": "3.5 Get Student Progress & Academic Analytics",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me/progress",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me", "progress"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "3.6 Add Academic Record",
+          "name": "3.5 Add Academic Record",
           "request": {
             "method": "POST",
             "header": [
@@ -288,7 +289,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"academicYear\": \"2025-2026\",\n  \"grade\": \"Grade 11\",\n  \"term\": \"Mid-Term\",\n  \"subject\": \"Mathematics\",\n  \"score\": 90,\n  \"attendance\": 96,\n  \"strengths\": [\"Algebra\", \"Geometry\"],\n  \"areasForImprovement\": [\"Trigonometry\"]\n}"
+              "raw": "{\n  \"academicYear\": \"2025-2026\",\n  \"grade\": \"Grade 11\",\n  \"term\": \"Mid-Term\",\n  \"subject\": \"Mathematics\",\n  \"score\": 92,\n  \"attendance\": 96,\n  \"strengths\": [\"Algebra\", \"Geometry\"],\n  \"areasForImprovement\": [\"Trigonometry\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/students/me/academic-records",
@@ -299,22 +300,7 @@
           "response": []
         },
         {
-          "name": "3.7 Get Academic Records",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me/academic-records",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me", "academic-records"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "3.8 Add Skill with Evidence",
+          "name": "3.6 Add Skill with Evidence",
           "request": {
             "method": "POST",
             "header": [
@@ -334,72 +320,7 @@
           "response": []
         },
         {
-          "name": "3.9 Get Skills List",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me/skills",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me", "skills"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "3.10 Create Goal with Milestones",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Score >85% in Grade 11 Final Examinations\",\n  \"category\": \"academic\",\n  \"targetDate\": \"2026-03-31\",\n  \"milestones\": [\n    { \"title\": \"Complete Math syllabus revision\", \"isCompleted\": true },\n    { \"title\": \"Solve 5 previous year question papers\", \"isCompleted\": false }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me/goals",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me", "goals"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "3.11 Get Goals List",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me/goals",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me", "goals"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "3.12 Get Career Profile",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/students/me/career-profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "students", "me", "career-profile"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "3.13 Get Career Readiness & Skill Gap Analysis",
+          "name": "3.7 Get Career Readiness",
           "request": {
             "method": "GET",
             "header": [
@@ -414,23 +335,103 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "4. Support Requests, Interactions & Follow-Ups",
+      "item": [
+        {
+          "name": "4.1 Submit Support Request (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"career\",\n  \"title\": \"Guidance on Engineering College Applications\",\n  \"description\": \"I would like advice on entrance examination preparation and fee grants for Computer Science programs.\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/support-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "support-requests"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Get Student Support Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/support-requests/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "support-requests", "my"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.3 Record Interaction & Auto-Create Follow-Up (Coordinator)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"type\": \"in_person\",\n  \"notes\": \"Met with student at Bangalore learning center. Discussed math progress and college options.\",\n  \"summary\": \"Student is dedicated; recommended solving 3 sample papers per week.\",\n  \"concerns\": [\"Trigonometry concepts\", \"Time management during mock tests\"],\n  \"actionItems\": [\n    {\n      \"description\": \"Complete 3 math practice tests\",\n      \"isCompleted\": false\n    }\n  ],\n  \"nextFollowUpDate\": \"2026-03-15\",\n  \"followUpTitle\": \"Review Math Sample Papers Results\",\n  \"followUpPriority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/interactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "interactions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.4 Get Coordinator Follow-Ups",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/followups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "followups"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.5 Get Follow-Ups Due Today",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordinatorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/followups/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "followups", "today"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5000",
-      "type": "string"
-    },
-    {
-      "key": "accessToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "refreshToken",
-      "value": "",
-      "type": "string"
-    }
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "coordinatorToken", "value": "", "type": "string" },
+    { "key": "studentId", "value": "", "type": "string" }
   ]
 }
