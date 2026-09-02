@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -12,6 +12,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
+const studentRoutes = require('./routes/student.routes');
 
 const app = express();
 
@@ -95,6 +96,7 @@ app.get('/api/v1/health', (req, res) => {
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/students', studentRoutes);
 
 // 404 Handler
 app.use(notFoundHandler);
