@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -9,6 +9,9 @@ const mongoose = require('mongoose');
 const env = require('./config/env');
 const logger = require('./utils/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+
+// Routes
+const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
@@ -89,6 +92,9 @@ app.get('/api/v1/health', (req, res) => {
     }
   });
 });
+
+// API Routes
+app.use('/api/v1/auth', authRoutes);
 
 // 404 Handler
 app.use(notFoundHandler);
