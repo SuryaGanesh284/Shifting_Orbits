@@ -19,6 +19,7 @@ const followUpRoutes = require('./routes/followups.routes');
 const coordinatorRoutes = require('./routes/coordinator.routes');
 const notificationRoutes = require('./routes/notifications.routes');
 const aiRoutes = require('./routes/ai.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 
 const app = express();
 
@@ -109,6 +110,7 @@ app.use('/api/v1/followups', followUpRoutes);
 app.use('/api/v1/coordinator', coordinatorRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 
 // 404 Handler
 app.use(notFoundHandler);
