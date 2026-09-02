@@ -43,8 +43,15 @@ export default function StudentProfile() {
     try {
       const payload = {
         ...form,
-        interests: form.interests.split(',').map((s) => s.trim()).filter(Boolean),
-        aspirations: { ...form.aspirations, dreamCompanies: form.aspirations.dreamCompanies.split(',').map((s) => s.trim()).filter(Boolean) },
+        education: {
+          ...form.education,
+          graduationYear: form.education?.graduationYear ? Number(form.education.graduationYear) : undefined,
+        },
+        interests: form.interests ? form.interests.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        aspirations: {
+          ...form.aspirations,
+          dreamCompanies: form.aspirations?.dreamCompanies ? form.aspirations.dreamCompanies.split(',').map((s) => s.trim()).filter(Boolean) : []
+        },
       };
       await api.put('/students/me', payload);
       toast.success('Profile updated!');
