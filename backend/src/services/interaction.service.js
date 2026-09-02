@@ -1,12 +1,45 @@
-const Interaction = require('../models/Interaction');
+﻿const Interaction = require('../models/Interaction');
 const FollowUp = require('../models/FollowUp');
 const Student = require('../models/Student');
+const User = require('../models/User');
+const { getOrCreateStudent } = require('./student.service');
 const { ApiError } = require('../middleware/errorHandler');
 const { emitToUser } = require('../config/socket');
 
+const resolveStudent = async (identifier) => {
+  if (!identifier) return null;
+  let student = null;
+
+  // Try by Student ID
+  try {
+    student = await Student.findById(identifier);
+  } catch (err) {}
+
+  // Try by User ID
+  if (!student) {
+    try {
+      student = await Student.findOne({ userId: identifier });
+    } catch (err) {}
+  }
+
+  // Check User collection and auto-initialize if needed
+  if (!student) {
+    try {
+      const user = await User.findById(identifier);
+      if (user && user.role === 'student') {
+        student = await getOrCreateStudent(user._id);
+      }
+    } catch (err) {}
+  }
+
+  return student;
+};
+
 const createInteraction = async (coordinatorId, data) => {
-  const student = await Student.findById(data.studentId);
-  if (!student) throw ApiError.notFound('Student not found');
+  const student = await resolveStudent(data.studentId);
+  if (!student) {
+    throw ApiError.notFound(`Student with ID '${data.studentId}' not found. Please provide a valid student or user ID.`);
+  }
 
   // Assign coordinator to student if unassigned
   if (!student.coordinatorId) {
@@ -15,7 +48,7 @@ const createInteraction = async (coordinatorId, data) => {
   }
 
   const interaction = new Interaction({
-    studentId: data.studentId,
+    studentId: student._id,
     coordinatorId,
     type: data.type || 'in_person',
     notes: data.notes,
@@ -32,10 +65,10 @@ const createInteraction = async (coordinatorId, data) => {
   let followUpTask = null;
   if (data.nextFollowUpDate) {
     followUpTask = new FollowUp({
-      studentId: data.studentId,
+      studentId: student._id,
       coordinatorId,
       interactionId: interaction._id,
-      title: data.followUpTitle || `Follow-up with student regarding interaction on ${new Date().toLocaleDateString()}`,
+      title: data.followUpTitle || `Follow-up regarding interaction on ${new Date().toLocaleDateString()}`,
       description: data.followUpDescription || data.summary || 'Follow-up on agreed action items',
       dueDate: new Date(data.nextFollowUpDate),
       priority: data.followUpPriority || 'medium'
@@ -51,10 +84,13 @@ const createInteraction = async (coordinatorId, data) => {
     .populate('coordinatorId', 'name email');
 
   // Emit event to student
-  emitToUser(student.userId.toString(), 'interaction.created', {
-    message: `New interaction recorded by your coordinator`,
-    interaction: populated
-  });
+  const studentUser = await User.findById(student.userId);
+  if (studentUser) {
+    emitToUser(studentUser._id.toString(), 'interaction.created', {
+      message: `New interaction recorded by your coordinator`,
+      interaction: populated
+    });
+  }
 
   return {
     interaction: populated,
@@ -84,14 +120,40 @@ const getInteractionById = async (interactionId, user) => {
 };
 
 const getStudentInteractions = async (studentId, user) => {
+  const student = await resolveStudent(studentId);
+  if (!student) throw ApiError.notFound('Student not found');
+
   if (user.role === 'student') {
-    const student = await Student.findOne({ userId: user._id });
-    if (!student || student._id.toString() !== studentId.toString()) {
+    if (student.userId.toString() !== user._id.toString()) {
       throw ApiError.forbidden('Access denied');
     }
   }
 
-  return Interaction.find({ studentId })
+  return Interaction.find({ studentId: student._id })
+    .populate('coordinatorId', 'name email')
+    .sort({ interactionDate: -1 });
+};
+
+const getAllInteractions = async (user, filters = {}) => {
+  let query = {};
+  if (user.role === 'coordinator') {
+    query.coordinatorId = user._id;
+  } else if (user.role === 'student') {
+    const student = await Student.findOne({ userId: user._id });
+    if (!student) return [];
+    query.studentId = student._id;
+  }
+
+  if (filters.studentId) {
+    const resolved = await resolveStudent(filters.studentId);
+    if (resolved) query.studentId = resolved._id;
+  }
+
+  return Interaction.find(query)
+    .populate({
+      path: 'studentId',
+      populate: { path: 'userId', select: 'name email phone centerId' }
+    })
     .populate('coordinatorId', 'name email')
     .sort({ interactionDate: -1 });
 };
@@ -127,34 +189,12 @@ const deleteInteraction = async (interactionId, coordinatorId) => {
   return { message: 'Interaction deleted successfully' };
 };
 
-const getAllInteractions = async (user, filters = {}) => {
-  let query = {};
-  if (user.role === 'coordinator') {
-    query.coordinatorId = user._id;
-  } else if (user.role === 'student') {
-    const student = await Student.findOne({ userId: user._id });
-    if (!student) return [];
-    query.studentId = student._id;
-  }
-
-  if (filters.studentId) {
-    query.studentId = filters.studentId;
-  }
-
-  return Interaction.find(query)
-    .populate({
-      path: 'studentId',
-      populate: { path: 'userId', select: 'name email phone centerId' }
-    })
-    .populate('coordinatorId', 'name email')
-    .sort({ interactionDate: -1 });
-};
-
 module.exports = {
   createInteraction,
   getInteractionById,
   getStudentInteractions,
   getAllInteractions,
   updateInteraction,
-  deleteInteraction
+  deleteInteraction,
+  resolveStudent
 };

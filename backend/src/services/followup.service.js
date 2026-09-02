@@ -1,11 +1,44 @@
 ﻿const FollowUp = require('../models/FollowUp');
 const Student = require('../models/Student');
+const User = require('../models/User');
+const { getOrCreateStudent } = require('./student.service');
 const { ApiError } = require('../middleware/errorHandler');
 const { emitToUser } = require('../config/socket');
 
+const resolveStudent = async (identifier) => {
+  if (!identifier) return null;
+  let student = null;
+
+  try {
+    student = await Student.findById(identifier);
+  } catch (err) {}
+
+  if (!student) {
+    try {
+      student = await Student.findOne({ userId: identifier });
+    } catch (err) {}
+  }
+
+  if (!student) {
+    try {
+      const user = await User.findById(identifier);
+      if (user && user.role === 'student') {
+        student = await getOrCreateStudent(user._id);
+      }
+    } catch (err) {}
+  }
+
+  return student;
+};
+
 const createFollowUp = async (coordinatorId, data) => {
+  const student = await resolveStudent(data.studentId);
+  if (!student) {
+    throw ApiError.notFound(`Student with ID '${data.studentId}' not found`);
+  }
+
   const followUp = new FollowUp({
-    studentId: data.studentId,
+    studentId: student._id,
     coordinatorId,
     interactionId: data.interactionId || null,
     supportRequestId: data.supportRequestId || null,
@@ -30,7 +63,10 @@ const getCoordinatorFollowUps = async (coordinatorId, filters = {}) => {
 
   if (filters.status) query.status = filters.status;
   if (filters.priority) query.priority = filters.priority;
-  if (filters.studentId) query.studentId = filters.studentId;
+  if (filters.studentId) {
+    const student = await resolveStudent(filters.studentId);
+    if (student) query.studentId = student._id;
+  }
 
   const followups = await FollowUp.find(query)
     .populate({
