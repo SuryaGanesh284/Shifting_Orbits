@@ -3,12 +3,15 @@ const Student = require('../models/Student');
 const User = require('../models/User');
 const { ApiError } = require('../middleware/errorHandler');
 const { emitToRole, emitToUser } = require('../config/socket');
+const notificationService = require('./notification.service');
 
 const createSupportRequest = async (userId, data) => {
-  const student = await Student.findOne({ userId });
+  const student = await Student.findOne({ userId }).populate('userId', 'name email');
   if (!student) {
     throw ApiError.badRequest('Student profile not found. Complete profile first.');
   }
+
+  const studentName = student.userId?.name || 'Student';
 
   const supportRequest = new SupportRequest({
     studentId: student._id,
@@ -28,18 +31,34 @@ const createSupportRequest = async (userId, data) => {
     })
     .populate('assignedCoordinator', 'name email');
 
+  // Create In-App notification
+  if (student.coordinatorId) {
+    await notificationService.createNotification({
+      userId: student.coordinatorId,
+      title: `New Support Request from ${studentName}`,
+      message: `${supportRequest.title} [Priority: ${supportRequest.priority.toUpperCase()}]`,
+      type: 'support_request',
+      priority: supportRequest.priority,
+      link: `/support-requests/${supportRequest._id}`,
+      metadata: { supportRequestId: supportRequest._id, studentId: student._id }
+    });
+  } else {
+    await notificationService.createRoleNotifications({
+      role: 'coordinator',
+      title: `New Support Request from ${studentName}`,
+      message: `${supportRequest.title} [Category: ${supportRequest.category}]`,
+      type: 'support_request',
+      priority: supportRequest.priority,
+      link: `/support-requests/${supportRequest._id}`,
+      metadata: { supportRequestId: supportRequest._id, studentId: student._id }
+    });
+  }
+
   // Real-time notification broadcast
   emitToRole('coordinator', 'support_request.created', {
     message: `New support request: ${supportRequest.title}`,
     supportRequest: populated
   });
-
-  if (student.coordinatorId) {
-    emitToUser(student.coordinatorId.toString(), 'support_request.created', {
-      message: `Support request assigned from student`,
-      supportRequest: populated
-    });
-  }
 
   return populated;
 };
@@ -112,9 +131,19 @@ const updateSupportRequest = async (requestId, user, data) => {
     })
     .populate('assignedCoordinator', 'name email');
 
-  // Real-time notification to student
+  // In-App Notification to student on update
   const student = await Student.findById(request.studentId);
   if (student) {
+    await notificationService.createNotification({
+      userId: student.userId,
+      title: `Support Request Status: ${request.status.toUpperCase()}`,
+      message: `Your request '${request.title}' is now ${request.status}.`,
+      type: 'support_request',
+      priority: request.priority,
+      link: `/support-requests/${request._id}`,
+      metadata: { supportRequestId: request._id, status: request.status }
+    });
+
     emitToUser(student.userId.toString(), 'support_request.updated', {
       message: `Your support request '${request.title}' status was updated to ${request.status}`,
       supportRequest: populated

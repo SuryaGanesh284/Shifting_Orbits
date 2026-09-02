@@ -1,8 +1,9 @@
-﻿const Interaction = require('../models/Interaction');
+const Interaction = require('../models/Interaction');
 const FollowUp = require('../models/FollowUp');
 const Student = require('../models/Student');
 const User = require('../models/User');
 const { getOrCreateStudent } = require('./student.service');
+const notificationService = require('./notification.service');
 const { ApiError } = require('../middleware/errorHandler');
 const { emitToUser } = require('../config/socket');
 
@@ -83,9 +84,19 @@ const createInteraction = async (coordinatorId, data) => {
     })
     .populate('coordinatorId', 'name email');
 
-  // Emit event to student
+  // In-App Notification to student
   const studentUser = await User.findById(student.userId);
   if (studentUser) {
+    await notificationService.createNotification({
+      userId: studentUser._id,
+      title: 'New Interaction Logged by Coordinator',
+      message: `Your coordinator recorded discussion notes and ${data.actionItems?.length || 0} action item(s).`,
+      type: 'interaction',
+      priority: 'medium',
+      link: `/interactions/${interaction._id}`,
+      metadata: { interactionId: interaction._id }
+    });
+
     emitToUser(studentUser._id.toString(), 'interaction.created', {
       message: `New interaction recorded by your coordinator`,
       interaction: populated
