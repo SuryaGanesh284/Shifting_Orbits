@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const { z } = require('zod');
 const interactionController = require('../controllers/interaction.controller');
 const { authenticate } = require('../middleware/auth');
@@ -37,6 +37,7 @@ router.put('/:id', authorizeRoles('coordinator', 'admin'), interactionController
 router.delete('/:id', authorizeRoles('coordinator', 'admin'), interactionController.deleteInteraction);
 
 // Both Coordinator and Student can view interactions
+router.get('/', interactionController.getAllInteractions);
 router.get('/:id', interactionController.getInteractionById);
 router.get('/student/:studentId', interactionController.getStudentInteractions);
 

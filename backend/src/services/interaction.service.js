@@ -1,4 +1,4 @@
-﻿const Interaction = require('../models/Interaction');
+const Interaction = require('../models/Interaction');
 const FollowUp = require('../models/FollowUp');
 const Student = require('../models/Student');
 const { ApiError } = require('../middleware/errorHandler');
@@ -127,10 +127,34 @@ const deleteInteraction = async (interactionId, coordinatorId) => {
   return { message: 'Interaction deleted successfully' };
 };
 
+const getAllInteractions = async (user, filters = {}) => {
+  let query = {};
+  if (user.role === 'coordinator') {
+    query.coordinatorId = user._id;
+  } else if (user.role === 'student') {
+    const student = await Student.findOne({ userId: user._id });
+    if (!student) return [];
+    query.studentId = student._id;
+  }
+
+  if (filters.studentId) {
+    query.studentId = filters.studentId;
+  }
+
+  return Interaction.find(query)
+    .populate({
+      path: 'studentId',
+      populate: { path: 'userId', select: 'name email phone centerId' }
+    })
+    .populate('coordinatorId', 'name email')
+    .sort({ interactionDate: -1 });
+};
+
 module.exports = {
   createInteraction,
   getInteractionById,
   getStudentInteractions,
+  getAllInteractions,
   updateInteraction,
   deleteInteraction
 };

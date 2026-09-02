@@ -1,4 +1,4 @@
-﻿const interactionService = require('../services/interaction.service');
+const interactionService = require('../services/interaction.service');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 const createInteraction = asyncHandler(async (req, res) => {
@@ -31,10 +31,16 @@ const deleteInteraction = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: result.message });
 });
 
+const getAllInteractions = asyncHandler(async (req, res) => {
+  const interactions = await interactionService.getAllInteractions(req.user, req.query);
+  res.status(200).json({ success: true, count: interactions.length, data: interactions });
+});
+
 module.exports = {
   createInteraction,
   getInteractionById,
   getStudentInteractions,
+  getAllInteractions,
   updateInteraction,
   deleteInteraction
 };
