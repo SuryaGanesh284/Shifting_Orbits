@@ -68,6 +68,27 @@ export default function CareerProfile() {
     }
   };
 
+  const [addingSkill, setAddingSkill] = useState(null);
+
+  const handleAddSkill = async (skillName) => {
+    setAddingSkill(skillName);
+    try {
+      const softSkills = ['Communication', 'Problem Solving', 'Critical Thinking', 'Time Management', 'Attention to Detail', 'English'];
+      const category = softSkills.some((ss) => ss.toLowerCase() === skillName.toLowerCase()) ? 'soft' : 'technical';
+      await api.post('/students/me/skills', {
+        name: skillName,
+        category,
+        level: 'intermediate'
+      });
+      toast.success(`Added "${skillName}" to your skills! (+14 pts)`);
+      await fetch();
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to add ${skillName}`);
+    } finally {
+      setAddingSkill(null);
+    }
+  };
+
   const set = (k) => (e) => setForm((f) => ({ ...f, aspirations: { ...f.aspirations, [k]: e.target.value } }));
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-[#AAFF00] border-t-transparent rounded-full animate-spin" /></div>;
@@ -138,9 +159,22 @@ export default function CareerProfile() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {missingSkills.map((s) => (
-                  <span key={s} className="bg-[#fafafa] text-[#1a1a1a] border border-[#e5e5e5] text-xs font-medium px-2.5 py-1 rounded-lg">
-                    + {s}
-                  </span>
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={addingSkill === s}
+                    onClick={() => handleAddSkill(s)}
+                    title={`Click to add ${s} to your skills (+14 pts)`}
+                    className="group inline-flex items-center gap-1.5 bg-white hover:bg-[#AAFF00]/15 text-[#1a1a1a] hover:text-black border border-[#e5e5e5] hover:border-[#AAFF00] text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="w-4 h-4 rounded-full bg-[#f0f0f0] group-hover:bg-[#AAFF00] flex items-center justify-center text-[12px] font-bold text-[#1a1a1a] transition-colors">
+                      {addingSkill === s ? '...' : '+'}
+                    </span>
+                    <span>{s}</span>
+                    <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">
+                      +14 pts
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>

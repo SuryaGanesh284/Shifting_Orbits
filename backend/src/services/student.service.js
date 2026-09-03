@@ -236,14 +236,19 @@ const getSkills = async (userId) => {
 
 const addSkill = async (userId, data) => {
   const student = await getOrCreateStudent(userId);
-  const existing = await Skill.findOne({ studentId: student._id, name: data.name });
+  const trimmedName = (data.name || '').trim();
+  const existing = await Skill.findOne({
+    studentId: student._id,
+    name: { $regex: new RegExp(`^${trimmedName}$`, 'i') }
+  });
   if (existing) {
     throw ApiError.conflict(`Skill '${data.name}' is already added. Use update to edit.`);
   }
 
   const skill = new Skill({
     studentId: student._id,
-    ...data
+    ...data,
+    name: trimmedName
   });
   await skill.save();
   return skill;
