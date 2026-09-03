@@ -27,7 +27,8 @@ export default function Interactions() {
       api.get('/coordinator/students').catch(() => ({ data: [] })),
     ]);
     setInteractions(ia.data?.data || ia.data || []);
-    setStudents(sa.data?.data || sa.data || []);
+    const sList = Array.isArray(sa.data?.data) ? sa.data.data : Array.isArray(sa.data) ? sa.data : [];
+    setStudents(sList);
     setLoading(false);
   };
 
@@ -128,8 +129,16 @@ export default function Interactions() {
             <option value="">Select a student…</option>
             {students.map((s) => {
               const sid = s._id || s.student?._id;
-              const name = s.name || s.user?.name || 'Student';
-              return <option key={sid} value={sid}>{name}</option>;
+              const name = s.userId?.name || s.name || s.user?.name || s.student?.userId?.name || 'Student';
+              const email = s.userId?.email || s.email || s.user?.email || '';
+              const prog = s.program || s.student?.program;
+              const grade = s.stage || s.student?.stage;
+              const tag = [prog, grade].filter(Boolean).join(' · ');
+              return (
+                <option key={sid} value={sid}>
+                  {name} {email ? `(${email})` : ''} {tag ? `— ${tag}` : ''}
+                </option>
+              );
             })}
           </Select>
           <Select label="Interaction Type *" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>

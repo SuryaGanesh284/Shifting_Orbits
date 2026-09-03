@@ -35,7 +35,8 @@ export default function FollowUps() {
     let data = fa.data?.data || fa.data || [];
     if (activeTab === 'Pending') data = data.filter((f) => f.status === 'pending' || f.status === 'in_progress');
     setFollowups(data);
-    setStudents(sa.data?.data || sa.data || []);
+    const sList = Array.isArray(sa.data?.data) ? sa.data.data : Array.isArray(sa.data) ? sa.data : [];
+    setStudents(sList);
     setLoading(false);
   };
 
@@ -135,7 +136,16 @@ export default function FollowUps() {
             <option value="">Select a student…</option>
             {students.map((s) => {
               const sid = s._id || s.student?._id;
-              return <option key={sid} value={sid}>{studentName(s)}</option>;
+              const name = s.userId?.name || s.name || s.user?.name || s.student?.userId?.name || 'Student';
+              const email = s.userId?.email || s.email || s.user?.email || '';
+              const prog = s.program || s.student?.program;
+              const grade = s.stage || s.student?.stage;
+              const tag = [prog, grade].filter(Boolean).join(' · ');
+              return (
+                <option key={sid} value={sid}>
+                  {name} {email ? `(${email})` : ''} {tag ? `— ${tag}` : ''}
+                </option>
+              );
             })}
           </Select>
           <Input label="Title *" placeholder="What needs to be followed up?" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
