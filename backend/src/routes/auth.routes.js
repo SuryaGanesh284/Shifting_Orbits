@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const { z } = require('zod');
 const authController = require('../controllers/auth.controller');
 const { validate } = require('../middleware/validation');
@@ -30,8 +30,23 @@ const refreshSchema = {
   })
 };
 
+const verifyOtpSchema = {
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    otp: z.string().min(4, 'Verification code is required').max(10)
+  })
+};
+
+const resendOtpSchema = {
+  body: z.object({
+    email: z.string().email('Invalid email address')
+  })
+};
+
 // Routes
 router.post('/register', validate(registerSchema), authController.register);
+router.post('/verify-otp', validate(verifyOtpSchema), authController.verifyOtp);
+router.post('/resend-otp', validate(resendOtpSchema), authController.resendOtp);
 router.post('/login', validate(loginSchema), authController.login);
 router.post('/refresh', validate(refreshSchema), authController.refresh);
 router.post('/logout', authenticate, authController.logout);

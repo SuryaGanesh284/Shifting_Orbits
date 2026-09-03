@@ -27,7 +27,35 @@ export function AuthProvider({ children }) {
   useEffect(() => { bootstrap(); }, [bootstrap]);
 
   const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password });
+    try {
+      const { data } = await api.post('/auth/login', { email, password });
+      const payload = data.data || data;
+      localStorage.setItem('accessToken', payload.accessToken);
+      localStorage.setItem('refreshToken', payload.refreshToken);
+      setUser(payload.user);
+      connectSocket(payload.accessToken);
+      return payload.user;
+    } catch (err) {
+      if (err.response?.data?.requiresVerification) {
+        return {
+          requiresVerification: true,
+          email: err.response.data.email || email,
+          message: err.response.data.message
+        };
+      }
+      throw err;
+    }
+  };
+
+  const register = async (fields) => {
+    const { data } = await api.post('/auth/register', fields);
+    if (data.requiresVerification) {
+      return {
+        requiresVerification: true,
+        email: data.email || fields.email,
+        message: data.message
+      };
+    }
     const payload = data.data || data;
     localStorage.setItem('accessToken', payload.accessToken);
     localStorage.setItem('refreshToken', payload.refreshToken);
@@ -36,14 +64,19 @@ export function AuthProvider({ children }) {
     return payload.user;
   };
 
-  const register = async (fields) => {
-    const { data } = await api.post('/auth/register', fields);
+  const verifyOtp = async (email, otp) => {
+    const { data } = await api.post('/auth/verify-otp', { email, otp });
     const payload = data.data || data;
     localStorage.setItem('accessToken', payload.accessToken);
     localStorage.setItem('refreshToken', payload.refreshToken);
     setUser(payload.user);
     connectSocket(payload.accessToken);
     return payload.user;
+  };
+
+  const resendOtp = async (email) => {
+    const { data } = await api.post('/auth/resend-otp', { email });
+    return data;
   };
 
   const logout = async () => {
@@ -55,7 +88,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, verifyOtp, resendOtp, logout }}>
       {children}
     </AuthContext.Provider>
   );

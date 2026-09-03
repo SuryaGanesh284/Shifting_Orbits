@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
 import { BookOpen, Brain, Target, Users } from 'lucide-react';
+import OtpVerification from '../components/auth/OtpVerification';
 
 export default function Login() {
   const { login } = useAuth();
@@ -12,6 +13,7 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [needsOtp, setNeedsOtp] = useState(false);
 
   const validate = () => {
     const e = {};
@@ -27,9 +29,14 @@ export default function Login() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      const user = await login(form.email, form.password);
-      toast.success(`Welcome back, ${user.name}!`);
-      navigate(user.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard');
+      const res = await login(form.email, form.password);
+      if (res?.requiresVerification) {
+        setNeedsOtp(true);
+        toast('Please enter the verification code sent to your email.');
+        return;
+      }
+      toast.success(`Welcome back, ${res.name}!`);
+      navigate(res.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {
@@ -88,43 +95,55 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-[#1a1a1a]">Welcome back</h1>
-            <p className="text-[#6b7280] text-sm mt-1">Log in to continue your journey</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email *"
-              type="email"
-              placeholder="Enter your email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              error={errors.email}
+          {needsOtp ? (
+            <OtpVerification
+              email={form.email}
+              onCancel={() => setNeedsOtp(false)}
+              onSuccess={(user) => {
+                navigate(user.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard');
+              }}
             />
-            <Input
-              label="Password *"
-              type="password"
-              placeholder="Enter your password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              error={errors.password}
-            />
-            <Button type="submit" loading={loading} className="w-full mt-2" size="lg">
-              Continue
-            </Button>
-          </form>
+          ) : (
+            <>
+              <div className="mb-8">
+                <h1 className="text-2xl font-black text-[#1a1a1a]">Welcome back</h1>
+                <p className="text-[#6b7280] text-sm mt-1">Log in to continue your journey</p>
+              </div>
 
-          <p className="text-center text-sm text-[#6b7280] mt-6">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-[#1a1a1a] font-semibold hover:text-[#AAFF00] transition-colors">
-              Sign up
-            </Link>
-          </p>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  label="Email *"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  error={errors.email}
+                />
+                <Input
+                  label="Password *"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  error={errors.password}
+                />
+                <Button type="submit" loading={loading} className="w-full mt-2" size="lg">
+                  Continue
+                </Button>
+              </form>
 
-          <Link to="/" className="block text-center text-xs text-[#9ca3af] mt-4 hover:text-[#6b7280] transition-colors">
-            ← Back to home
-          </Link>
+              <p className="text-center text-sm text-[#6b7280] mt-6">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-[#1a1a1a] font-semibold hover:text-[#AAFF00] transition-colors">
+                  Sign up
+                </Link>
+              </p>
+
+              <Link to="/" className="block text-center text-xs text-[#9ca3af] mt-4 hover:text-[#6b7280] transition-colors">
+                ← Back to home
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>

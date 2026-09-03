@@ -6,10 +6,13 @@ import Input from '../components/ui/Input';
 import { Select } from '../components/ui/Input';
 import toast from 'react-hot-toast';
 import { GraduationCap, Users, Star, BookOpen } from 'lucide-react';
+import OtpVerification from '../components/auth/OtpVerification';
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [step, setStep] = useState('form'); // 'form' | 'otp'
+  const [targetEmail, setTargetEmail] = useState('');
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', role: 'student', phone: '' });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -33,9 +36,15 @@ export default function Register() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      const user = await register({ name: form.name, email: form.email, password: form.password, role: form.role, phone: form.phone });
-      toast.success(`Account created! Welcome, ${user.name}`);
-      navigate(user.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard');
+      const res = await register({ name: form.name, email: form.email, password: form.password, role: form.role, phone: form.phone });
+      if (res?.requiresVerification) {
+        setTargetEmail(res.email || form.email);
+        setStep('otp');
+        toast.success('6-digit code sent to your email!');
+      } else {
+        toast.success(`Account created! Welcome, ${res.name}`);
+        navigate(res.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard');
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -84,35 +93,48 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-[#1a1a1a]">Create account</h1>
-            <p className="text-[#6b7280] text-sm mt-1">Join Shifting Orbits today</p>
-          </div>
+          {step === 'otp' ? (
+            <OtpVerification
+              email={targetEmail}
+              userName={form.name}
+              onCancel={() => setStep('form')}
+              onSuccess={(user) => {
+                navigate(user.role === 'student' ? '/student/dashboard' : '/coordinator/dashboard');
+              }}
+            />
+          ) : (
+            <>
+              <div className="mb-8">
+                <h1 className="text-2xl font-black text-[#1a1a1a]">Create account</h1>
+                <p className="text-[#6b7280] text-sm mt-1">Join Shifting Orbits today</p>
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input label="Full name *" placeholder="Your full name" value={form.name} onChange={set('name')} error={errors.name} />
-            <Input label="Email *" type="email" placeholder="Enter your email" value={form.email} onChange={set('email')} error={errors.email} />
-            <Input label="Phone" type="tel" placeholder="Phone number (optional)" value={form.phone} onChange={set('phone')} />
-            <Select label="I am a *" value={form.role} onChange={set('role')}>
-              <option value="student">Student</option>
-              <option value="coordinator">Coordinator</option>
-            </Select>
-            <Input label="Password *" type="password" placeholder="Min. 8 characters" value={form.password} onChange={set('password')} error={errors.password} />
-            <Input label="Confirm password *" type="password" placeholder="Repeat password" value={form.confirm} onChange={set('confirm')} error={errors.confirm} />
-            <Button type="submit" loading={loading} className="w-full mt-2" size="lg">
-              Create account
-            </Button>
-          </form>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input label="Full name *" placeholder="Your full name" value={form.name} onChange={set('name')} error={errors.name} />
+                <Input label="Email *" type="email" placeholder="Enter your email" value={form.email} onChange={set('email')} error={errors.email} />
+                <Input label="Phone" type="tel" placeholder="Phone number (optional)" value={form.phone} onChange={set('phone')} />
+                <Select label="I am a *" value={form.role} onChange={set('role')}>
+                  <option value="student">Student</option>
+                  <option value="coordinator">Coordinator</option>
+                </Select>
+                <Input label="Password *" type="password" placeholder="Min. 8 characters" value={form.password} onChange={set('password')} error={errors.password} />
+                <Input label="Confirm password *" type="password" placeholder="Repeat password" value={form.confirm} onChange={set('confirm')} error={errors.confirm} />
+                <Button type="submit" loading={loading} className="w-full mt-2" size="lg">
+                  Create account
+                </Button>
+              </form>
 
-          <p className="text-center text-sm text-[#6b7280] mt-6">
-            Already have an account?{' '}
-            <Link to="/login" className="text-[#1a1a1a] font-semibold hover:text-[#AAFF00] transition-colors">
-              Log in
-            </Link>
-          </p>
-          <Link to="/" className="block text-center text-xs text-[#9ca3af] mt-4 hover:text-[#6b7280] transition-colors">
-            ← Back to home
-          </Link>
+              <p className="text-center text-sm text-[#6b7280] mt-6">
+                Already have an account?{' '}
+                <Link to="/login" className="text-[#1a1a1a] font-semibold hover:text-[#AAFF00] transition-colors">
+                  Log in
+                </Link>
+              </p>
+              <Link to="/" className="block text-center text-xs text-[#9ca3af] mt-4 hover:text-[#6b7280] transition-colors">
+                ← Back to home
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>
