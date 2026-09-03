@@ -1,4 +1,4 @@
-﻿const Student = require('../models/Student');
+const Student = require('../models/Student');
 const AcademicRecord = require('../models/AcademicRecord');
 const Skill = require('../models/Skill');
 const Goal = require('../models/Goal');
@@ -320,12 +320,17 @@ const getCareerProfile = async (userId) => {
   const student = await getOrCreateStudent(userId);
   const skills = await Skill.find({ studentId: student._id });
 
-  return {
+  const aspirations = {
     targetCareer: student.aspirations?.targetCareer || 'Not specified',
     higherEducationGoal: student.aspirations?.higherEducationGoal || '',
-    interests: student.interests || [],
     dreamCompanies: student.aspirations?.dreamCompanies || [],
-    notes: student.aspirations?.notes || '',
+    notes: student.aspirations?.notes || ''
+  };
+
+  return {
+    ...aspirations,
+    aspirations,
+    interests: student.interests || [],
     currentSkills: skills
   };
 };
@@ -334,11 +339,25 @@ const updateCareerProfile = async (userId, data) => {
   const student = await getOrCreateStudent(userId);
   if (!student.aspirations) student.aspirations = {};
 
-  if (data.targetCareer !== undefined) student.aspirations.targetCareer = data.targetCareer;
-  if (data.higherEducationGoal !== undefined) student.aspirations.higherEducationGoal = data.higherEducationGoal;
-  if (data.dreamCompanies !== undefined) student.aspirations.dreamCompanies = data.dreamCompanies;
-  if (data.notes !== undefined) student.aspirations.notes = data.notes;
-  if (data.interests !== undefined) student.interests = data.interests;
+  const source = data.aspirations || data;
+
+  if (source.targetCareer !== undefined) student.aspirations.targetCareer = source.targetCareer;
+  if (source.higherEducationGoal !== undefined) student.aspirations.higherEducationGoal = source.higherEducationGoal;
+  if (source.dreamCompanies !== undefined) {
+    if (typeof source.dreamCompanies === 'string') {
+      student.aspirations.dreamCompanies = source.dreamCompanies.split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(source.dreamCompanies)) {
+      student.aspirations.dreamCompanies = source.dreamCompanies;
+    }
+  }
+  if (source.notes !== undefined) student.aspirations.notes = source.notes;
+  if (source.interests !== undefined) {
+    if (typeof source.interests === 'string') {
+      student.interests = source.interests.split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(source.interests)) {
+      student.interests = source.interests;
+    }
+  }
 
   student.calculateProfileCompletion();
   await student.save();

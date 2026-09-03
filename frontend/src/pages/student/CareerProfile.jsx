@@ -17,15 +17,16 @@ export default function CareerProfile() {
   const fetch = async () => {
     try {
       const [p, r] = await Promise.all([api.get('/students/me/career-profile'), api.get('/students/me/career-readiness')]);
-      setProfile(p.data.data || p.data);
+      const profileData = p.data.data || p.data;
+      setProfile(profileData);
       setReadiness(r.data.data || r.data);
-      const d = p.data.data || p.data;
+      const asp = profileData?.aspirations || profileData || {};
       setForm({
         aspirations: {
-          targetCareer: d?.aspirations?.targetCareer || '',
-          higherEducationGoal: d?.aspirations?.higherEducationGoal || '',
-          dreamCompanies: d?.aspirations?.dreamCompanies?.join(', ') || '',
-          notes: d?.aspirations?.notes || '',
+          targetCareer: asp.targetCareer || '',
+          higherEducationGoal: asp.higherEducationGoal || '',
+          dreamCompanies: Array.isArray(asp.dreamCompanies) ? asp.dreamCompanies.join(', ') : (asp.dreamCompanies || ''),
+          notes: asp.notes || '',
         }
       });
     } catch {
@@ -40,10 +41,20 @@ export default function CareerProfile() {
   const save = async () => {
     setSaving(true);
     try {
+      const companies = typeof form.aspirations?.dreamCompanies === 'string'
+        ? form.aspirations.dreamCompanies.split(',').map((s) => s.trim()).filter(Boolean)
+        : (Array.isArray(form.aspirations?.dreamCompanies) ? form.aspirations.dreamCompanies : []);
+
       const payload = {
+        targetCareer: form.aspirations?.targetCareer || '',
+        higherEducationGoal: form.aspirations?.higherEducationGoal || '',
+        dreamCompanies: companies,
+        notes: form.aspirations?.notes || '',
         aspirations: {
-          ...form.aspirations,
-          dreamCompanies: form.aspirations.dreamCompanies.split(',').map((s) => s.trim()).filter(Boolean),
+          targetCareer: form.aspirations?.targetCareer || '',
+          higherEducationGoal: form.aspirations?.higherEducationGoal || '',
+          dreamCompanies: companies,
+          notes: form.aspirations?.notes || '',
         }
       };
       await api.put('/students/me/career-profile', payload);
@@ -117,10 +128,10 @@ export default function CareerProfile() {
         ) : (
           <div className="space-y-4">
             {[
-              ['Target Career', profile?.aspirations?.targetCareer],
-              ['Higher Education Goal', profile?.aspirations?.higherEducationGoal],
-              ['Dream Companies', profile?.aspirations?.dreamCompanies?.join(', ')],
-              ['Notes', profile?.aspirations?.notes],
+              ['Target Career', profile?.aspirations?.targetCareer || profile?.targetCareer],
+              ['Higher Education Goal', profile?.aspirations?.higherEducationGoal || profile?.higherEducationGoal],
+              ['Dream Companies', Array.isArray(profile?.aspirations?.dreamCompanies || profile?.dreamCompanies) ? (profile?.aspirations?.dreamCompanies || profile?.dreamCompanies).join(', ') : (profile?.aspirations?.dreamCompanies || profile?.dreamCompanies)],
+              ['Notes', profile?.aspirations?.notes || profile?.notes],
             ].map(([label, val]) => (
               <div key={label} className="flex items-start gap-4 py-3 border-b border-[#f5f5f5] last:border-0">
                 <p className="text-xs text-[#6b7280] w-40 shrink-0 mt-0.5">{label}</p>
@@ -132,11 +143,11 @@ export default function CareerProfile() {
       </Card>
 
       {/* Dream companies chips */}
-      {!editing && profile?.aspirations?.dreamCompanies?.length > 0 && (
+      {!editing && ((profile?.aspirations?.dreamCompanies?.length > 0) || (profile?.dreamCompanies?.length > 0)) && (
         <Card>
           <CardHeader title="Dream Companies" />
           <div className="flex flex-wrap gap-2">
-            {profile.aspirations.dreamCompanies.map((c) => (
+            {(profile?.aspirations?.dreamCompanies || profile?.dreamCompanies || []).map((c) => (
               <span key={c} className="bg-[#1a1a1a] text-white text-xs font-medium px-3 py-1.5 rounded-full">{c}</span>
             ))}
           </div>
