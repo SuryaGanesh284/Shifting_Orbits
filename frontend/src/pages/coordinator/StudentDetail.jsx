@@ -4,11 +4,12 @@ import api from '../../lib/api';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import ProgressBar from '../../components/ui/ProgressBar';
+import { statusBadge, priorityBadge } from '../../components/ui/Badge';
 import { ArrowLeft, Brain } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
-const TABS = ['Overview', 'Academic', 'Skills', 'Career', 'Interactions'];
+const TABS = ['Overview', 'Academic', 'Skills', 'Career', 'Support', 'Interactions'];
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -224,6 +225,39 @@ export default function StudentDetail() {
               </div>
             ))}
           </div>
+        </Card>
+      )}
+
+      {tab === 'Support' && (
+        <Card>
+          <CardHeader title="Support Requests" subtitle="Help and guidance requests raised by this student" />
+          {(student.supportRequests || []).length === 0 ? (
+            <p className="text-sm text-center py-6 text-[#6b7280]">No support requests submitted by this student.</p>
+          ) : (
+            <ul className="space-y-3">
+              {(student.supportRequests || []).map((r) => (
+                <li key={r._id} className="p-4 bg-[#fafafa] rounded-xl border border-[#f0f0f0] space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      {statusBadge(r.status)}
+                      {priorityBadge(r.priority)}
+                      <span className="text-[10px] uppercase text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">{r.category}</span>
+                    </div>
+                    <span className="text-xs text-[#9ca3af]">
+                      {r.createdAt ? format(new Date(r.createdAt), 'dd MMM yyyy') : ''}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-[#1a1a1a]">{r.title}</h4>
+                  <p className="text-xs text-[#6b7280] leading-relaxed">{r.description}</p>
+                  {r.resolutionNotes && (
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-100 rounded-lg text-xs text-emerald-800">
+                      <span className="font-bold">Resolution Notes: </span>{r.resolutionNotes}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       )}
 

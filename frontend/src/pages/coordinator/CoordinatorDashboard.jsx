@@ -1,23 +1,74 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '../../lib/api';
 import StatCard from '../../components/ui/StatCard';
 import Card, { CardHeader } from '../../components/ui/Card';
-import { priorityBadge } from '../../components/ui/Badge';
+import { priorityBadge, statusBadge } from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
-import { AlertTriangle, ClipboardList, MessageSquare, Users } from 'lucide-react';
+import Modal from '../../components/ui/Modal';
+import { Textarea } from '../../components/ui/Input';
+import { AlertTriangle, ClipboardList, Users, RotateCw, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { getSocket } from '../../lib/socket';
+import toast from 'react-hot-toast';
 
 export default function CoordinatorDashboard() {
   const [dash, setDash] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [resolvingReq, setResolvingReq] = useState(null);
+  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [savingAction, setSavingAction] = useState(false);
+
+  const fetchDashboard = useCallback(async (isSilent = false) => {
+    if (!isSilent) setRefreshing(true);
+    try {
+      const { data } = await api.get('/coordinator/dashboard');
+      setDash(data.data || data);
+    } catch {
+      if (!isSilent) toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    api.get('/coordinator/dashboard')
-      .then(({ data }) => setDash(data.data || data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    fetchDashboard(false);
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      fetchDashboard(true);
+    };
+
+    socket.on('support_request.created', handleUpdate);
+    socket.on('support_request.updated', handleUpdate);
+
+    return () => {
+      socket.off('support_request.created', handleUpdate);
+      socket.off('support_request.updated', handleUpdate);
+    };
+  }, [fetchDashboard]);
+
+  const handleUpdateStatus = async (requestId, newStatus, notes = '') => {
+    setSavingAction(true);
+    try {
+      await api.put(`/support-requests/${requestId}`, {
+        status: newStatus,
+        resolutionNotes: notes
+      });
+      toast.success(newStatus === 'resolved' ? 'Support request resolved!' : 'Request marked in progress');
+      setResolvingReq(null);
+      setResolutionNotes('');
+      fetchDashboard(true);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update support request');
+    } finally {
+      setSavingAction(false);
+    }
+  };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-[#AAFF00] border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -36,6 +87,9 @@ export default function CoordinatorDashboard() {
           <p className="text-gray-400 text-sm mt-1">Manage your students, track alerts, and review support requests.</p>
         </div>
         <div className="hidden sm:flex gap-3">
+          <Button variant="outline" size="sm" onClick={() => fetchDashboard(false)} disabled={refreshing} className="gap-1.5 text-white border-gray-700 hover:bg-gray-800">
+            <RotateCw size={13} className={refreshing ? 'animate-spin' : ''} /> Refresh
+          </Button>
           <Link to="/coordinator/students"><Button variant="lime" size="sm">View Students</Button></Link>
         </div>
       </div>
@@ -86,7 +140,11 @@ export default function CoordinatorDashboard() {
 
         {/* Pending Student Support Requests */}
         <Card>
-          <CardHeader title="Student Support Requests 🆘" subtitle="Inquiries and help requests from students" />
+          <CardHeader title="Student Support Requests 🆘" subtitle="Inquiries and help requests from students" action={
+            <Button variant="ghost" size="sm" onClick={() => fetchDashboard(true)} className="gap-1 text-xs">
+              <RotateCw size={11} className={refreshing ? 'animate-spin' : ''} /> Sync
+            </Button>
+          } />
           {supportRequests.length === 0 ? (
             <p className="text-sm text-[#6b7280] text-center py-6">No pending support requests.</p>
           ) : (
@@ -95,18 +153,34 @@ export default function CoordinatorDashboard() {
                 const studentName = r.studentId?.userId?.name || r.studentId?.name || 'Student';
                 const studentId = r.studentId?._id || r.studentId;
                 return (
-                  <li key={r._id} className="p-3 bg-[#fafafa] rounded-xl border border-[#f0f0f0] flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-bold text-[#1a1a1a] truncate">{studentName}</span>
-                        {priorityBadge(r.priority)}
+                  <li key={r._id} className="p-3.5 bg-[#fafafa] rounded-xl border border-[#f0f0f0] space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          <span className="text-xs font-bold text-[#1a1a1a]">{studentName}</span>
+                          {priorityBadge(r.priority)}
+                          {statusBadge(r.status)}
+                          <span className="text-[10px] uppercase text-gray-500 border border-gray-200 px-1.5 py-0.5 rounded">{r.category}</span>
+                        </div>
+                        <p className="text-xs font-bold text-gray-800">{r.title}</p>
+                        <p className="text-xs text-gray-600 line-clamp-2 mt-0.5">{r.description}</p>
                       </div>
-                      <p className="text-xs font-medium text-gray-700 truncate">{r.title}</p>
-                      <p className="text-[11px] text-gray-500 line-clamp-1">{r.description}</p>
                     </div>
-                    <Link to={`/coordinator/students/${studentId}`} className="shrink-0 self-center">
-                      <Button variant="outline" size="sm" className="text-xs">Profile</Button>
-                    </Link>
+                    <div className="flex items-center justify-between pt-1.5 border-t border-gray-100">
+                      <Link to={`/coordinator/students/${studentId}`} className="text-xs text-[#1a1a1a] font-medium hover:underline">
+                        View 360° Profile →
+                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        {r.status === 'pending' && (
+                          <Button variant="ghost" size="xs" onClick={() => handleUpdateStatus(r._id, 'in_progress')} disabled={savingAction} className="text-xs text-amber-700 hover:bg-amber-50">
+                            Start Review
+                          </Button>
+                        )}
+                        <Button variant="lime" size="xs" onClick={() => { setResolvingReq(r); setResolutionNotes(''); }} className="text-xs gap-1">
+                          <CheckCircle2 size={12} /> Resolve
+                        </Button>
+                      </div>
+                    </div>
                   </li>
                 );
               })}
@@ -147,6 +221,32 @@ export default function CoordinatorDashboard() {
           </ul>
         )}
       </Card>
+
+      {/* Resolve Support Request Modal */}
+      <Modal isOpen={!!resolvingReq} onClose={() => setResolvingReq(null)} title="Resolve Support Request">
+        {resolvingReq && (
+          <form onSubmit={(e) => { e.preventDefault(); handleUpdateStatus(resolvingReq._id, 'resolved', resolutionNotes); }} className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Student & Request</p>
+              <p className="text-sm font-bold text-gray-900 mt-1">{resolvingReq.studentId?.userId?.name || resolvingReq.studentId?.name || 'Student'}</p>
+              <p className="text-xs text-gray-700 font-medium">{resolvingReq.title}</p>
+              <p className="text-xs text-gray-600 mt-1 p-2.5 bg-gray-50 rounded-lg border border-gray-100">{resolvingReq.description}</p>
+            </div>
+            <Textarea
+              label="Resolution Notes *"
+              placeholder="Explain how the issue was resolved (e.g., Connected student with the scholarship committee and arranged financial counseling)..."
+              value={resolutionNotes}
+              onChange={(e) => setResolutionNotes(e.target.value)}
+              required
+              rows={3}
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setResolvingReq(null)}>Cancel</Button>
+              <Button type="submit" variant="lime" size="sm" loading={savingAction}>Confirm Resolution</Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }
