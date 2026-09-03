@@ -21,15 +21,22 @@ const createTransporter = async () => {
   const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
 
   if (user && pass) {
-    transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    if (host.includes('gmail') || user.includes('@gmail.com')) {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass }
+      });
+    } else {
+      transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    }
     logger.info(`[Email] Configured SMTP transporter with user: ${user}`);
   } else {
     // If no credentials provided, use ethereal test account or fallback console logger
@@ -64,7 +71,10 @@ const createTransporter = async () => {
  */
 const sendOtpEmail = async (toEmail, otpCode, userName = 'Student') => {
   const mailer = await createTransporter();
-  const fromAddress = process.env.EMAIL_FROM || process.env.EMAIL_USER || '"Shifting Orbits Foundation" <noreply@shiftingorbits.org>';
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const fromAddress = user
+    ? `"Shifting Orbits Foundation" <${user}>`
+    : (process.env.EMAIL_FROM || '"Shifting Orbits Foundation" <noreply@shiftingorbits.org>');
 
   const htmlContent = `
     <!DOCTYPE html>
