@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns').promises;
 const logger = console;
 
 let transporter = null;
@@ -22,9 +23,24 @@ const createTransporter = async () => {
 
   if (user && pass) {
     if (host.includes('gmail') || user.includes('@gmail.com')) {
+      // Resolve IPv4 address directly to bypass IPv6 ENETUNREACH on Windows/Node
+      let hostTarget = 'smtp.gmail.com';
+      try {
+        const ips = await dns.resolve4('smtp.gmail.com');
+        if (ips && ips.length > 0) hostTarget = ips[0];
+      } catch (e) {
+        logger.warn('[Email] IPv4 resolution fallback:', e.message);
+      }
+
       transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user, pass }
+        host: hostTarget,
+        port: 587,
+        secure: false,
+        auth: { user, pass },
+        tls: {
+          servername: 'smtp.gmail.com',
+          rejectUnauthorized: false
+        }
       });
     } else {
       transporter = nodemailer.createTransport({
