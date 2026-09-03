@@ -402,8 +402,16 @@ const getCareerReadiness = async (userId) => {
   return {
     targetCareer,
     readinessScore,
+    overallScore: readinessScore,
+    score: readinessScore,
     readinessLevel,
     skillMatchPercentage,
+    careerGoalCompletion,
+    breakdown: {
+      'Skill Match': skillMatchPercentage,
+      'Goal Completion': careerGoalCompletion,
+      'Readiness Index': readinessScore
+    },
     matchedSkills,
     missingSkills,
     recommendations: missingSkills.map((s) => `Enroll in or log practice projects for ${s}`)

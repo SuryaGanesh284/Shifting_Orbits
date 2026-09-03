@@ -72,30 +72,92 @@ export default function CareerProfile() {
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-[#AAFF00] border-t-transparent rounded-full animate-spin" /></div>;
 
-  const score = readiness?.overallScore || readiness?.score || 0;
+  const score = readiness?.readinessScore ?? readiness?.overallScore ?? readiness?.score ?? 0;
   const breakdown = readiness?.breakdown || {};
+  const matchedSkills = readiness?.matchedSkills || [];
+  const missingSkills = readiness?.missingSkills || [];
+  const readinessLevel = readiness?.readinessLevel || 'Emerging';
 
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Readiness score */}
-      <div className="bg-[#1a1a1a] rounded-2xl p-6">
-        <p className="text-gray-400 text-sm mb-1">Career Readiness Score</p>
+      {/* Readiness score card */}
+      <div className="bg-[#1a1a1a] rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-gray-400 text-sm">Career Readiness Score</p>
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider bg-[#AAFF00]/20 text-[#AAFF00]">
+            {readinessLevel}
+          </span>
+        </div>
         <div className="flex items-end gap-3 mb-4">
           <span className="text-5xl font-black text-[#AAFF00]">{score}</span>
           <span className="text-gray-400 text-lg mb-1">/100</span>
         </div>
         <ProgressBar value={score} color="lime" showPercent={false} />
         {Object.keys(breakdown).length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+          <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-white/10">
             {Object.entries(breakdown).map(([k, v]) => (
               <div key={k} className="text-center">
-                <p className="text-[#AAFF00] text-xl font-black">{Math.round(v)}</p>
-                <p className="text-gray-400 text-[10px] capitalize mt-0.5">{k.replace(/_/g, ' ')}</p>
+                <p className="text-[#AAFF00] text-xl font-black">{Math.round(v)}%</p>
+                <p className="text-gray-400 text-[10px] capitalize mt-0.5">{k}</p>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* How to increase readiness score tips */}
+      <Card>
+        <CardHeader
+          title="How to Increase Your Score 🚀"
+          subtitle="Your score combines 70% skill benchmark matches and 30% career goal progress"
+        />
+        <div className="space-y-4">
+          {/* Matched skills */}
+          <div>
+            <p className="text-xs font-semibold text-[#6b7280] uppercase tracking-wider mb-2">
+              Acquired Benchmark Skills ({matchedSkills.length})
+            </p>
+            {matchedSkills.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {matchedSkills.map((s) => (
+                  <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium px-2.5 py-1 rounded-lg">
+                    ✓ {s}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#6b7280]">No matching benchmark skills logged yet. Add skills in the Skills section.</p>
+            )}
+          </div>
+
+          {/* Missing skills to learn */}
+          {missingSkills.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-[#6b7280] uppercase tracking-wider mb-2">
+                Recommended Skills to Add for {readiness?.targetCareer || 'Your Career'} (+14 pts each)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {missingSkills.map((s) => (
+                  <span key={s} className="bg-[#fafafa] text-[#1a1a1a] border border-[#e5e5e5] text-xs font-medium px-2.5 py-1 rounded-lg">
+                    + {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="p-3.5 bg-[#f7fdf0] border border-[#e2f7c2] rounded-xl flex items-start gap-3">
+            <span className="text-base">💡</span>
+            <div className="text-xs text-[#2d2d2d] leading-relaxed">
+              <span className="font-bold text-[#1a1a1a]">Two ways to reach 100/100:</span>
+              <ul className="list-disc ml-4 mt-1 space-y-0.5 text-[#4b5563]">
+                <li>Add the recommended skills above in <strong>Skills</strong> (+14 points each).</li>
+                <li>Create a <strong>Career Goal</strong> in <strong>Goals</strong> and advance its progress bar (up to +30 points).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Aspirations */}
       <Card>
