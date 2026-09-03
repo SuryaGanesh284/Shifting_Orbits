@@ -1,4 +1,4 @@
-﻿const Student = require('../models/Student');
+const Student = require('../models/Student');
 const User = require('../models/User');
 const AcademicRecord = require('../models/AcademicRecord');
 const SupportRequest = require('../models/SupportRequest');
@@ -73,6 +73,24 @@ const getInstitutionalOverview = async () => {
     }
   });
 
+  const programsList = Object.entries(programDistribution).map(([name, count]) => ({
+    _id: name,
+    program: name,
+    count
+  }));
+
+  const stagesList = Object.entries(stageDistribution).map(([name, count]) => ({
+    _id: name,
+    stage: name,
+    count
+  }));
+
+  const centersList = Object.entries(centerDistribution).map(([name, count]) => ({
+    _id: name,
+    center: name,
+    count
+  }));
+
   return {
     summary: {
       totalStudents: students.length,
@@ -80,14 +98,23 @@ const getInstitutionalOverview = async () => {
       totalCoordinators: coordinators.length,
       foundationAvgScore,
       foundationAvgAttendance,
+      totalInteractions: interactions.length,
       totalInteractionsLogged: interactions.length,
+      totalFollowUps,
+      completedFollowUps,
+      totalSupportRequests: totalRequests,
+      resolvedSupportRequests: resolvedRequests,
+      pendingSupportRequests: totalRequests - resolvedRequests,
       supportRequestResolutionRate: `${resolutionRate}%`,
       followUpCompletionRate: `${followUpCompletionRate}%`
     },
     supportPriorityDistribution: priorityBreakdown,
     programDistribution,
     stageDistribution,
-    centerDistribution
+    centerDistribution,
+    programsList,
+    stagesList,
+    centersList
   };
 };
 

@@ -1,4 +1,4 @@
-﻿const Student = require('../models/Student');
+const Student = require('../models/Student');
 const User = require('../models/User');
 const AcademicRecord = require('../models/AcademicRecord');
 const Skill = require('../models/Skill');
@@ -14,7 +14,7 @@ const { ApiError } = require('../middleware/errorHandler');
 const getCoordinatorDashboard = async (coordinatorId) => {
   // Query all students or students assigned to this coordinator
   const studentDocs = await Student.find({
-    $or: [{ coordinatorId }, { coordinatorId: null }]
+    $or: [{ coordinatorId }, { coordinatorId: null }, { coordinatorId: { $exists: false } }]
   }).populate('userId', 'name email phone status lastLoginAt');
 
   const studentIds = studentDocs.map((s) => s._id);
