@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const { z } = require('zod');
 const studentController = require('../controllers/student.controller');
 const { authenticate } = require('../middleware/auth');
@@ -20,7 +20,7 @@ const updateProfileSchema = {
       currentGrade: z.string().optional(),
       institution: z.string().optional(),
       stream: z.string().optional(),
-      graduationYear: z.number().optional(),
+      graduationYear: z.coerce.number().optional(),
       board: z.string().optional()
     }).optional(),
     interests: z.array(z.string()).optional(),
@@ -45,9 +45,9 @@ const addAcademicRecordSchema = {
     grade: z.string().min(1, 'Grade is required'),
     term: z.string().optional(),
     subject: z.string().min(1, 'Subject is required'),
-    score: z.number().min(0).max(100),
-    maxScore: z.number().optional().default(100),
-    attendance: z.number().min(0).max(100).optional().default(90),
+    score: z.coerce.number().min(0).max(100),
+    maxScore: z.coerce.number().optional().default(100),
+    attendance: z.coerce.number().min(0).max(100).optional().default(90),
     strengths: z.array(z.string()).optional(),
     areasForImprovement: z.array(z.string()).optional(),
     remarks: z.string().optional()

@@ -1,4 +1,4 @@
-﻿const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const env = require('../config/env');
@@ -30,11 +30,48 @@ const hashToken = async (token) => {
   return bcrypt.hash(token, salt);
 };
 
+const Student = require('../models/Student');
+const { sendOtpEmail } = require('./email.service');
+
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 const registerUser = async ({ name, email, password, role = 'student', phone = '', centerId = 'SOF-BLR-01' }) => {
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
+    // If account was created but email was never verified, allow re-triggering OTP verification!
+    if (!existingUser.isEmailVerified) {
+      const otp = generateOtp();
+      const salt = await bcrypt.genSalt(10);
+      const hashedOtp = await bcrypt.hash(otp, salt);
+
+      existingUser.name = name;
+      existingUser.passwordHash = password;
+      existingUser.role = role;
+      existingUser.phone = phone;
+      existingUser.centerId = centerId;
+      existingUser.verificationOtp = {
+        code: hashedOtp,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+      };
+      await existingUser.save();
+
+      await sendOtpEmail(existingUser.email, otp, existingUser.name);
+
+      return {
+        user: existingUser,
+        requiresVerification: true,
+        email: existingUser.email,
+        message: 'A 6-digit verification code has been sent to your email.'
+      };
+    }
     throw ApiError.conflict('An account with this email address already exists');
   }
+
+  const otp = generateOtp();
+  const salt = await bcrypt.genSalt(10);
+  const hashedOtp = await bcrypt.hash(otp, salt);
 
   const user = new User({
     name,
@@ -42,10 +79,80 @@ const registerUser = async ({ name, email, password, role = 'student', phone = '
     passwordHash: password,
     role,
     phone,
-    centerId
+    centerId,
+    isEmailVerified: false,
+    verificationOtp: {
+      code: hashedOtp,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    }
   });
 
   await user.save();
+
+  // Send verification code to email
+  await sendOtpEmail(user.email, otp, user.name);
+
+  return {
+    user,
+    requiresVerification: true,
+    email: user.email,
+    message: 'Registration initiated! A 6-digit verification code has been sent to your email.'
+  };
+};
+
+const verifyOtp = async ({ email, otp }) => {
+  if (!email || !otp) {
+    throw ApiError.badRequest('Email and OTP verification code are required');
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+verificationOtp.code +verificationOtp.expiresAt');
+  if (!user) {
+    throw ApiError.notFound('User not found with this email address');
+  }
+
+  if (user.isEmailVerified) {
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    user.refreshTokenHash = await hashToken(refreshToken);
+    user.lastLoginAt = new Date();
+    await user.save();
+    return {
+      user,
+      accessToken,
+      refreshToken,
+      message: 'Account is already verified'
+    };
+  }
+
+  if (!user.verificationOtp || !user.verificationOtp.code) {
+    throw ApiError.badRequest('No active verification code found. Please request a new code.');
+  }
+
+  if (new Date() > new Date(user.verificationOtp.expiresAt)) {
+    throw ApiError.badRequest('Verification code has expired. Please request a new code.');
+  }
+
+  const isMatch = await bcrypt.compare(otp.trim(), user.verificationOtp.code);
+  if (!isMatch) {
+    throw ApiError.badRequest('Invalid verification code. Please check and try again.');
+  }
+
+  // Mark email as verified and clear OTP
+  user.isEmailVerified = true;
+  user.verificationOtp = { code: null, expiresAt: null };
+
+  // If registering as student, ensure Student document exists
+  if (user.role === 'student') {
+    const existingStudent = await Student.findOne({ userId: user._id });
+    if (!existingStudent) {
+      await Student.create({
+        userId: user._id,
+        centerId: user.centerId || 'SOF-BLR-01',
+        program: 'Sethu',
+        stage: 'Grade 11'
+      });
+    }
+  }
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
@@ -57,7 +164,40 @@ const registerUser = async ({ name, email, password, role = 'student', phone = '
   return {
     user,
     accessToken,
-    refreshToken
+    refreshToken,
+    message: 'Email verified successfully! Welcome to Shifting Orbits Foundation.'
+  };
+};
+
+const resendOtp = async ({ email }) => {
+  if (!email) {
+    throw ApiError.badRequest('Email is required');
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+verificationOtp.code +verificationOtp.expiresAt');
+  if (!user) {
+    throw ApiError.notFound('User not found with this email address');
+  }
+
+  if (user.isEmailVerified) {
+    throw ApiError.badRequest('This account is already verified. Please log in.');
+  }
+
+  const otp = generateOtp();
+  const salt = await bcrypt.genSalt(10);
+  const hashedOtp = await bcrypt.hash(otp, salt);
+
+  user.verificationOtp = {
+    code: hashedOtp,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+  };
+  await user.save();
+
+  await sendOtpEmail(user.email, otp, user.name);
+
+  return {
+    success: true,
+    message: 'A fresh verification code has been dispatched to your email.'
   };
 };
 
@@ -74,6 +214,27 @@ const loginUser = async ({ email, password }) => {
 
   if (user.status !== 'active') {
     throw ApiError.forbidden(`Your account is ${user.status}. Please contact an administrator.`);
+  }
+
+  // If email is not verified, require verification and send fresh OTP
+  if (!user.isEmailVerified) {
+    const otp = generateOtp();
+    const salt = await bcrypt.genSalt(10);
+    const hashedOtp = await bcrypt.hash(otp, salt);
+
+    user.verificationOtp = {
+      code: hashedOtp,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    };
+    await user.save();
+
+    await sendOtpEmail(user.email, otp, user.name);
+
+    return {
+      requiresVerification: true,
+      email: user.email,
+      message: 'Your account is not verified yet. A verification code has been sent to your email address.'
+    };
   }
 
   const accessToken = generateAccessToken(user);
@@ -147,6 +308,8 @@ const getUserProfile = async ({ userId }) => {
 
 module.exports = {
   registerUser,
+  verifyOtp,
+  resendOtp,
   loginUser,
   refreshAccessToken,
   logoutUser,

@@ -1,8 +1,10 @@
-﻿const Student = require('../models/Student');
+const Student = require('../models/Student');
 const AcademicRecord = require('../models/AcademicRecord');
 const Skill = require('../models/Skill');
 const Goal = require('../models/Goal');
 const User = require('../models/User');
+const SupportRequest = require('../models/SupportRequest');
+const Interaction = require('../models/Interaction');
 const { ApiError } = require('../middleware/errorHandler');
 
 const getOrCreateStudent = async (userId) => {
@@ -56,10 +58,13 @@ const getStudentDashboard = async (userId) => {
   const student = await getOrCreateStudent(userId);
   const studentId = student._id;
 
-  const [academicRecords, skills, goals] = await Promise.all([
-    AcademicRecord.find({ studentId }).sort({ assessmentDate: -1 }).limit(10),
+  const [academicRecords, skills, goals, supportRequests, interactions, user] = await Promise.all([
+    AcademicRecord.find({ studentId }).sort({ assessmentDate: 1 }),
     Skill.find({ studentId }).sort({ level: -1 }),
-    Goal.find({ studentId }).sort({ targetDate: 1 })
+    Goal.find({ studentId }).sort({ targetDate: 1 }),
+    SupportRequest.find({ studentId }),
+    Interaction.find({ studentId }).sort({ interactionDate: -1 }).limit(5).populate('coordinatorId', 'name'),
+    User.findById(userId).select('name email phone centerId')
   ]);
 
   // Compute academic average and attendance
@@ -86,22 +91,81 @@ const getStudentDashboard = async (userId) => {
   };
   const journeyProgress = stageWeights[student.stage] || 20;
 
+  // Subject breakdown for Bar Chart
+  const subjectMap = {};
+  academicRecords.forEach((r) => {
+    if (!subjectMap[r.subject]) {
+      subjectMap[r.subject] = { subject: r.subject, totalScore: 0, totalAtt: 0, count: 0 };
+    }
+    subjectMap[r.subject].totalScore += r.score;
+    subjectMap[r.subject].totalAtt += (r.attendance || 0);
+    subjectMap[r.subject].count += 1;
+  });
+
+  const subjectBreakdown = Object.values(subjectMap).map((s) => ({
+    subject: s.subject,
+    averageScore: Math.round(s.totalScore / s.count),
+    averageAttendance: Math.round(s.totalAtt / s.count),
+    assessmentsCount: s.count
+  }));
+
+  // Score trend over time (for Area / Line chart)
+  const scoreTrend = academicRecords.map((r) => ({
+    id: r._id,
+    date: r.assessmentDate,
+    term: r.term,
+    subject: r.subject,
+    score: r.score,
+    attendance: r.attendance || 0
+  }));
+
+  // Skills by category
+  const skillsByCategory = {
+    technical: skills.filter((s) => s.category === 'technical').length,
+    soft: skills.filter((s) => s.category === 'soft').length,
+    domain: skills.filter((s) => s.category === 'domain').length,
+    language: skills.filter((s) => s.category === 'language').length
+  };
+
+  const studentData = {
+    ...student.toObject(),
+    name: user?.name || student.userId?.name || 'Student',
+    email: user?.email || student.userId?.email || '',
+    profileCompletion: student.profileCompletion || 20
+  };
+
+  const progressData = {
+    totalGoals: goals.length,
+    activeGoals: activeGoals.length,
+    completedGoals: completedGoals.length,
+    totalSkills: skills.length,
+    totalAcademicRecords: academicRecords.length,
+    totalSupportRequests: supportRequests.length,
+    pendingSupportRequests: supportRequests.filter((s) => s.status === 'pending').length,
+    academicAverage: avgScore,
+    attendanceAverage: avgAttendance,
+    journeyProgress,
+    profileCompletion: student.profileCompletion
+  };
+
   return {
-    student,
+    student: studentData,
     summary: {
-      profileCompletion: student.profileCompletion,
-      journeyProgress,
+      ...progressData,
       currentStage: student.stage,
       program: student.program,
-      academicAverage: avgScore,
-      attendanceAverage: avgAttendance,
-      totalSkills: skills.length,
       activeGoalsCount: activeGoals.length,
       completedGoalsCount: completedGoals.length
     },
-    recentAcademicRecords: academicRecords.slice(0, 5),
-    topSkills: skills.slice(0, 5),
-    upcomingGoals: activeGoals.slice(0, 3)
+    progress: progressData,
+    recentGoals: goals.slice(0, 5),
+    upcomingGoals: activeGoals.slice(0, 3),
+    recentInteractions: interactions,
+    recentAcademicRecords: academicRecords.slice(-5).reverse(),
+    topSkills: skills.slice(0, 6),
+    subjectBreakdown,
+    scoreTrend,
+    skillsByCategory
   };
 };
 
@@ -236,14 +300,19 @@ const getSkills = async (userId) => {
 
 const addSkill = async (userId, data) => {
   const student = await getOrCreateStudent(userId);
-  const existing = await Skill.findOne({ studentId: student._id, name: data.name });
+  const trimmedName = (data.name || '').trim();
+  const existing = await Skill.findOne({
+    studentId: student._id,
+    name: { $regex: new RegExp(`^${trimmedName}$`, 'i') }
+  });
   if (existing) {
     throw ApiError.conflict(`Skill '${data.name}' is already added. Use update to edit.`);
   }
 
   const skill = new Skill({
     studentId: student._id,
-    ...data
+    ...data,
+    name: trimmedName
   });
   await skill.save();
   return skill;
@@ -320,12 +389,17 @@ const getCareerProfile = async (userId) => {
   const student = await getOrCreateStudent(userId);
   const skills = await Skill.find({ studentId: student._id });
 
-  return {
+  const aspirations = {
     targetCareer: student.aspirations?.targetCareer || 'Not specified',
     higherEducationGoal: student.aspirations?.higherEducationGoal || '',
-    interests: student.interests || [],
     dreamCompanies: student.aspirations?.dreamCompanies || [],
-    notes: student.aspirations?.notes || '',
+    notes: student.aspirations?.notes || ''
+  };
+
+  return {
+    ...aspirations,
+    aspirations,
+    interests: student.interests || [],
     currentSkills: skills
   };
 };
@@ -334,11 +408,25 @@ const updateCareerProfile = async (userId, data) => {
   const student = await getOrCreateStudent(userId);
   if (!student.aspirations) student.aspirations = {};
 
-  if (data.targetCareer !== undefined) student.aspirations.targetCareer = data.targetCareer;
-  if (data.higherEducationGoal !== undefined) student.aspirations.higherEducationGoal = data.higherEducationGoal;
-  if (data.dreamCompanies !== undefined) student.aspirations.dreamCompanies = data.dreamCompanies;
-  if (data.notes !== undefined) student.aspirations.notes = data.notes;
-  if (data.interests !== undefined) student.interests = data.interests;
+  const source = data.aspirations || data;
+
+  if (source.targetCareer !== undefined) student.aspirations.targetCareer = source.targetCareer;
+  if (source.higherEducationGoal !== undefined) student.aspirations.higherEducationGoal = source.higherEducationGoal;
+  if (source.dreamCompanies !== undefined) {
+    if (typeof source.dreamCompanies === 'string') {
+      student.aspirations.dreamCompanies = source.dreamCompanies.split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(source.dreamCompanies)) {
+      student.aspirations.dreamCompanies = source.dreamCompanies;
+    }
+  }
+  if (source.notes !== undefined) student.aspirations.notes = source.notes;
+  if (source.interests !== undefined) {
+    if (typeof source.interests === 'string') {
+      student.interests = source.interests.split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(source.interests)) {
+      student.interests = source.interests;
+    }
+  }
 
   student.calculateProfileCompletion();
   await student.save();
@@ -362,19 +450,38 @@ const getCareerReadiness = async (userId) => {
     'General Professional': ['Communication', 'Computer Basics', 'Problem Solving', 'Time Management', 'English']
   };
 
-  const requiredSkills = careerBenchmarks[targetCareer] || careerBenchmarks['General Professional'];
-  const acquiredSkillNames = skills.map((s) => s.name.toLowerCase());
+  // Case-insensitive benchmark match
+  const normalizedTarget = targetCareer.toLowerCase().trim();
+  let matchedBenchmark = careerBenchmarks['General Professional'];
+  for (const [key, bSkills] of Object.entries(careerBenchmarks)) {
+    if (normalizedTarget.includes(key.toLowerCase()) || key.toLowerCase().includes(normalizedTarget)) {
+      matchedBenchmark = bSkills;
+      break;
+    }
+  }
 
-  const matchedSkills = requiredSkills.filter((s) => acquiredSkillNames.includes(s.toLowerCase()));
-  const missingSkills = requiredSkills.filter((s) => !acquiredSkillNames.includes(s.toLowerCase()));
+  const requiredSkills = matchedBenchmark;
+  const acquiredSkillNames = skills.map((s) => s.name.toLowerCase().trim());
+
+  const matchedSkills = requiredSkills.filter((s) =>
+    acquiredSkillNames.some((an) => an === s.toLowerCase() || an.includes(s.toLowerCase()) || s.toLowerCase().includes(an))
+  );
+  const missingSkills = requiredSkills.filter((s) =>
+    !acquiredSkillNames.some((an) => an === s.toLowerCase() || an.includes(s.toLowerCase()) || s.toLowerCase().includes(an))
+  );
 
   const skillMatchPercentage = Math.round((matchedSkills.length / requiredSkills.length) * 100);
-  const careerGoals = goals.filter((g) => g.category === 'career');
-  const careerGoalCompletion = careerGoals.length > 0
-    ? Math.round(careerGoals.reduce((sum, g) => sum + g.progress, 0) / careerGoals.length)
-    : 0;
 
-  const readinessScore = Math.round(skillMatchPercentage * 0.7 + careerGoalCompletion * 0.3);
+  // Match career category goals (case-insensitive)
+  const careerGoals = goals.filter((g) => (g.category || '').toLowerCase() === 'career');
+  let careerGoalCompletion = 0;
+  if (careerGoals.length > 0) {
+    const completions = careerGoals.map((g) => (g.status === 'completed' ? 100 : (g.progress || 0)));
+    careerGoalCompletion = Math.max(...completions);
+  }
+
+  // Combine 70% skills match + 30% goal completion
+  const readinessScore = Math.min(100, Math.round((skillMatchPercentage * 0.7) + (careerGoalCompletion * 0.3)));
 
   let readinessLevel = 'Emerging';
   if (readinessScore >= 75) readinessLevel = 'Ready';
@@ -383,8 +490,16 @@ const getCareerReadiness = async (userId) => {
   return {
     targetCareer,
     readinessScore,
+    overallScore: readinessScore,
+    score: readinessScore,
     readinessLevel,
     skillMatchPercentage,
+    careerGoalCompletion,
+    breakdown: {
+      'Skill Match': skillMatchPercentage,
+      'Goal Completion': careerGoalCompletion,
+      'Readiness Index': readinessScore
+    },
     matchedSkills,
     missingSkills,
     recommendations: missingSkills.map((s) => `Enroll in or log practice projects for ${s}`)

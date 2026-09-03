@@ -1,4 +1,4 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
@@ -46,6 +46,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['active', 'inactive', 'suspended'],
       default: 'active'
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    },
+    verificationOtp: {
+      code: { type: String, select: false, default: null },
+      expiresAt: { type: Date, select: false, default: null }
     },
     refreshTokenHash: {
       type: String,
