@@ -3,6 +3,8 @@ const AcademicRecord = require('../models/AcademicRecord');
 const Skill = require('../models/Skill');
 const Goal = require('../models/Goal');
 const User = require('../models/User');
+const SupportRequest = require('../models/SupportRequest');
+const Interaction = require('../models/Interaction');
 const { ApiError } = require('../middleware/errorHandler');
 
 const getOrCreateStudent = async (userId) => {
@@ -56,10 +58,13 @@ const getStudentDashboard = async (userId) => {
   const student = await getOrCreateStudent(userId);
   const studentId = student._id;
 
-  const [academicRecords, skills, goals] = await Promise.all([
-    AcademicRecord.find({ studentId }).sort({ assessmentDate: -1 }).limit(10),
+  const [academicRecords, skills, goals, supportRequests, interactions, user] = await Promise.all([
+    AcademicRecord.find({ studentId }).sort({ assessmentDate: 1 }),
     Skill.find({ studentId }).sort({ level: -1 }),
-    Goal.find({ studentId }).sort({ targetDate: 1 })
+    Goal.find({ studentId }).sort({ targetDate: 1 }),
+    SupportRequest.find({ studentId }),
+    Interaction.find({ studentId }).sort({ interactionDate: -1 }).limit(5).populate('coordinatorId', 'name'),
+    User.findById(userId).select('name email phone centerId')
   ]);
 
   // Compute academic average and attendance
@@ -86,22 +91,81 @@ const getStudentDashboard = async (userId) => {
   };
   const journeyProgress = stageWeights[student.stage] || 20;
 
+  // Subject breakdown for Bar Chart
+  const subjectMap = {};
+  academicRecords.forEach((r) => {
+    if (!subjectMap[r.subject]) {
+      subjectMap[r.subject] = { subject: r.subject, totalScore: 0, totalAtt: 0, count: 0 };
+    }
+    subjectMap[r.subject].totalScore += r.score;
+    subjectMap[r.subject].totalAtt += (r.attendance || 0);
+    subjectMap[r.subject].count += 1;
+  });
+
+  const subjectBreakdown = Object.values(subjectMap).map((s) => ({
+    subject: s.subject,
+    averageScore: Math.round(s.totalScore / s.count),
+    averageAttendance: Math.round(s.totalAtt / s.count),
+    assessmentsCount: s.count
+  }));
+
+  // Score trend over time (for Area / Line chart)
+  const scoreTrend = academicRecords.map((r) => ({
+    id: r._id,
+    date: r.assessmentDate,
+    term: r.term,
+    subject: r.subject,
+    score: r.score,
+    attendance: r.attendance || 0
+  }));
+
+  // Skills by category
+  const skillsByCategory = {
+    technical: skills.filter((s) => s.category === 'technical').length,
+    soft: skills.filter((s) => s.category === 'soft').length,
+    domain: skills.filter((s) => s.category === 'domain').length,
+    language: skills.filter((s) => s.category === 'language').length
+  };
+
+  const studentData = {
+    ...student.toObject(),
+    name: user?.name || student.userId?.name || 'Student',
+    email: user?.email || student.userId?.email || '',
+    profileCompletion: student.profileCompletion || 20
+  };
+
+  const progressData = {
+    totalGoals: goals.length,
+    activeGoals: activeGoals.length,
+    completedGoals: completedGoals.length,
+    totalSkills: skills.length,
+    totalAcademicRecords: academicRecords.length,
+    totalSupportRequests: supportRequests.length,
+    pendingSupportRequests: supportRequests.filter((s) => s.status === 'pending').length,
+    academicAverage: avgScore,
+    attendanceAverage: avgAttendance,
+    journeyProgress,
+    profileCompletion: student.profileCompletion
+  };
+
   return {
-    student,
+    student: studentData,
     summary: {
-      profileCompletion: student.profileCompletion,
-      journeyProgress,
+      ...progressData,
       currentStage: student.stage,
       program: student.program,
-      academicAverage: avgScore,
-      attendanceAverage: avgAttendance,
-      totalSkills: skills.length,
       activeGoalsCount: activeGoals.length,
       completedGoalsCount: completedGoals.length
     },
-    recentAcademicRecords: academicRecords.slice(0, 5),
-    topSkills: skills.slice(0, 5),
-    upcomingGoals: activeGoals.slice(0, 3)
+    progress: progressData,
+    recentGoals: goals.slice(0, 5),
+    upcomingGoals: activeGoals.slice(0, 3),
+    recentInteractions: interactions,
+    recentAcademicRecords: academicRecords.slice(-5).reverse(),
+    topSkills: skills.slice(0, 6),
+    subjectBreakdown,
+    scoreTrend,
+    skillsByCategory
   };
 };
 
