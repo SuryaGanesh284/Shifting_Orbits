@@ -386,19 +386,38 @@ const getCareerReadiness = async (userId) => {
     'General Professional': ['Communication', 'Computer Basics', 'Problem Solving', 'Time Management', 'English']
   };
 
-  const requiredSkills = careerBenchmarks[targetCareer] || careerBenchmarks['General Professional'];
-  const acquiredSkillNames = skills.map((s) => s.name.toLowerCase());
+  // Case-insensitive benchmark match
+  const normalizedTarget = targetCareer.toLowerCase().trim();
+  let matchedBenchmark = careerBenchmarks['General Professional'];
+  for (const [key, bSkills] of Object.entries(careerBenchmarks)) {
+    if (normalizedTarget.includes(key.toLowerCase()) || key.toLowerCase().includes(normalizedTarget)) {
+      matchedBenchmark = bSkills;
+      break;
+    }
+  }
 
-  const matchedSkills = requiredSkills.filter((s) => acquiredSkillNames.includes(s.toLowerCase()));
-  const missingSkills = requiredSkills.filter((s) => !acquiredSkillNames.includes(s.toLowerCase()));
+  const requiredSkills = matchedBenchmark;
+  const acquiredSkillNames = skills.map((s) => s.name.toLowerCase().trim());
+
+  const matchedSkills = requiredSkills.filter((s) =>
+    acquiredSkillNames.some((an) => an === s.toLowerCase() || an.includes(s.toLowerCase()) || s.toLowerCase().includes(an))
+  );
+  const missingSkills = requiredSkills.filter((s) =>
+    !acquiredSkillNames.some((an) => an === s.toLowerCase() || an.includes(s.toLowerCase()) || s.toLowerCase().includes(an))
+  );
 
   const skillMatchPercentage = Math.round((matchedSkills.length / requiredSkills.length) * 100);
-  const careerGoals = goals.filter((g) => g.category === 'career');
-  const careerGoalCompletion = careerGoals.length > 0
-    ? Math.round(careerGoals.reduce((sum, g) => sum + g.progress, 0) / careerGoals.length)
-    : 0;
 
-  const readinessScore = Math.round(skillMatchPercentage * 0.7 + careerGoalCompletion * 0.3);
+  // Match career category goals (case-insensitive)
+  const careerGoals = goals.filter((g) => (g.category || '').toLowerCase() === 'career');
+  let careerGoalCompletion = 0;
+  if (careerGoals.length > 0) {
+    const completions = careerGoals.map((g) => (g.status === 'completed' ? 100 : (g.progress || 0)));
+    careerGoalCompletion = Math.max(...completions);
+  }
+
+  // Combine 70% skills match + 30% goal completion
+  const readinessScore = Math.min(100, Math.round((skillMatchPercentage * 0.7) + (careerGoalCompletion * 0.3)));
 
   let readinessLevel = 'Emerging';
   if (readinessScore >= 75) readinessLevel = 'Ready';

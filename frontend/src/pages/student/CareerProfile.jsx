@@ -89,6 +89,28 @@ export default function CareerProfile() {
     }
   };
 
+  const [removingSkill, setRemovingSkill] = useState(null);
+
+  const handleRemoveSkill = async (skillName) => {
+    setRemovingSkill(skillName);
+    try {
+      const skillsRes = await api.get('/students/me/skills');
+      const list = skillsRes.data.data || skillsRes.data || [];
+      const target = list.find((sk) => sk.name.toLowerCase() === skillName.toLowerCase());
+      if (target) {
+        await api.delete(`/students/me/skills/${target._id}`);
+        toast.success(`Removed "${skillName}" from your skills (-14 pts)`);
+        await fetch();
+      } else {
+        toast.error(`Skill "${skillName}" not found`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to remove ${skillName}`);
+    } finally {
+      setRemovingSkill(null);
+    }
+  };
+
   const set = (k) => (e) => setForm((f) => ({ ...f, aspirations: { ...f.aspirations, [k]: e.target.value } }));
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-[#AAFF00] border-t-transparent rounded-full animate-spin" /></div>;
@@ -141,9 +163,18 @@ export default function CareerProfile() {
             {matchedSkills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {matchedSkills.map((s) => (
-                  <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium px-2.5 py-1 rounded-lg">
-                    ✓ {s}
-                  </span>
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={removingSkill === s}
+                    onClick={() => handleRemoveSkill(s)}
+                    title={`Click to remove "${s}" from your skills (-14 pts)`}
+                    className="group inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-rose-50 text-emerald-700 hover:text-rose-700 border border-emerald-200 hover:border-rose-300 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="group-hover:hidden">✓ {s}</span>
+                    <span className="hidden group-hover:inline">✕ Remove {s}</span>
+                    {removingSkill === s && <span className="text-[10px] text-gray-500 animate-pulse">...</span>}
+                  </button>
                 ))}
               </div>
             ) : (

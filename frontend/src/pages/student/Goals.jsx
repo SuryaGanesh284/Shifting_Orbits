@@ -20,7 +20,7 @@ export default function Goals() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
-  const blank = { title: '', description: '', category: 'academic', targetDate: '', status: 'pending', milestones: [] };
+  const blank = { title: '', description: '', category: 'career', targetDate: '', status: 'in_progress', progress: 0, milestones: [] };
   const [form, setForm] = useState(blank);
   const [milestoneText, setMilestoneText] = useState('');
 
@@ -36,29 +36,82 @@ export default function Goals() {
   const openCreate = () => { setEditing(null); setForm(blank); setMilestoneText(''); setShowModal(true); };
   const openEdit = (g) => {
     setEditing(g._id);
-    setForm({ title: g.title, description: g.description || '', category: g.category, targetDate: g.targetDate?.slice(0, 10) || '', status: g.status, milestones: g.milestones || [] });
+    setForm({
+      title: g.title,
+      description: g.description || '',
+      category: g.category,
+      targetDate: g.targetDate?.slice(0, 10) || '',
+      status: g.status,
+      progress: g.progress ?? (g.status === 'completed' ? 100 : 0),
+      milestones: g.milestones || []
+    });
     setMilestoneText('');
     setShowModal(true);
   };
 
   const addMilestone = () => {
     if (!milestoneText.trim()) return;
-    setForm((f) => ({ ...f, milestones: [...f.milestones, { title: milestoneText.trim(), isCompleted: false }] }));
+    setForm((f) => {
+      const updated = [...f.milestones, { title: milestoneText.trim(), isCompleted: false }];
+      const completedCount = updated.filter((m) => m.isCompleted).length;
+      const progress = updated.length > 0 ? Math.round((completedCount / updated.length) * 100) : f.progress;
+      return {
+        ...f,
+        milestones: updated,
+        progress
+      };
+    });
     setMilestoneText('');
   };
 
   const toggleMilestone = (i) => {
-    setForm((f) => ({ ...f, milestones: f.milestones.map((m, idx) => idx === i ? { ...m, isCompleted: !m.isCompleted } : m) }));
+    setForm((f) => {
+      const updated = f.milestones.map((m, idx) => idx === i ? { ...m, isCompleted: !m.isCompleted } : m);
+      const completedCount = updated.filter((m) => m.isCompleted).length;
+      const progress = updated.length > 0 ? Math.round((completedCount / updated.length) * 100) : f.progress;
+      return {
+        ...f,
+        milestones: updated,
+        progress,
+        status: progress === 100 ? 'completed' : (progress > 0 ? 'in_progress' : f.status)
+      };
+    });
   };
 
   const removeMilestone = (i) => setForm((f) => ({ ...f, milestones: f.milestones.filter((_, idx) => idx !== i) }));
+
+  const toggleCardMilestone = async (goal, milestoneIndex) => {
+    const updatedMilestones = goal.milestones.map((m, idx) =>
+      idx === milestoneIndex ? { ...m, isCompleted: !m.isCompleted } : m
+    );
+    const completedCount = updatedMilestones.filter((m) => m.isCompleted).length;
+    const newProgress = Math.round((completedCount / updatedMilestones.length) * 100);
+    const newStatus = newProgress === 100 ? 'completed' : 'in_progress';
+
+    try {
+      await api.put(`/students/me/goals/${goal._id}`, {
+        milestones: updatedMilestones,
+        progress: newProgress,
+        status: newStatus
+      });
+      toast.success(`Milestone updated! Progress: ${newProgress}%`);
+      fetch();
+    } catch {
+      toast.error('Failed to update milestone');
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (editing) await api.put(`/students/me/goals/${editing}`, form);
-      else await api.post('/students/me/goals', form);
+      const payload = {
+        ...form,
+        progress: Number(form.progress || 0),
+        status: form.progress === 100 ? 'completed' : form.status
+      };
+      if (editing) await api.put(`/students/me/goals/${editing}`, payload);
+      else await api.post('/students/me/goals', payload);
       toast.success(editing ? 'Goal updated!' : 'Goal created!');
       setShowModal(false);
       fetch();
@@ -116,9 +169,14 @@ export default function Goals() {
                 <div className="mt-3 space-y-1.5">
                   {g.milestones.slice(0, 3).map((m, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${m.isCompleted ? 'bg-[#AAFF00] border-[#AAFF00]' : 'border-[#d1d1d1]'}`}>
+                      <button
+                        type="button"
+                        onClick={() => toggleCardMilestone(g, i)}
+                        title={m.isCompleted ? 'Mark incomplete' : 'Mark completed'}
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center cursor-pointer transition-colors ${m.isCompleted ? 'bg-[#AAFF00] border-[#AAFF00]' : 'border-[#d1d1d1] hover:border-[#AAFF00]'}`}
+                      >
                         {m.isCompleted && <Check size={10} className="text-[#1a1a1a]" />}
-                      </div>
+                      </button>
                       <span className={`text-xs ${m.isCompleted ? 'line-through text-[#9ca3af]' : 'text-[#6b7280]'}`}>{m.title}</span>
                     </div>
                   ))}
@@ -147,6 +205,34 @@ export default function Goals() {
               {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
             </Select>
           )}
+
+          {/* Direct Progress Slider */}
+          <div className="bg-[#fafafa] p-3.5 rounded-xl border border-[#f0f0f0]">
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-xs font-semibold text-[#1a1a1a] uppercase tracking-wider">Goal Progress</label>
+              <span className="text-xs font-bold text-[#1a1a1a] bg-[#AAFF00] px-2.5 py-0.5 rounded-full">
+                {form.progress || 0}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              className="w-full accent-[#AAFF00] cursor-pointer"
+              value={form.progress || 0}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setForm({
+                  ...form,
+                  progress: val,
+                  status: val === 100 ? 'completed' : (val > 0 ? 'in_progress' : form.status)
+                });
+              }}
+            />
+            <p className="text-[11px] text-[#6b7280] mt-1">Slide to 100% or complete all milestones below to finish this goal.</p>
+          </div>
+
           {/* Milestones */}
           <div>
             <label className="block text-sm font-medium text-[#1a1a1a] mb-2">Milestones</label>
