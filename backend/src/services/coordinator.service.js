@@ -11,15 +11,41 @@ const { getCareerReadiness } = require('./student.service');
 const { resolveStudent } = require('./interaction.service');
 const { ApiError } = require('../middleware/errorHandler');
 
-const getCoordinatorDashboard = async (coordinatorId) => {
-  // Query all students or students assigned to this coordinator
-  const studentDocs = await Student.find({
-    $or: [{ coordinatorId }, { coordinatorId: null }, { coordinatorId: { $exists: false } }]
-  }).populate('userId', 'name email phone status lastLoginAt');
+const MAX_STUDENTS_PER_COORDINATOR = 4;
 
+/**
+ * Ensures a coordinator is assigned at most 4 students
+ */
+const ensureCoordinatorStudents = async (coordinatorId) => {
+  // 1. Fetch currently assigned students
+  let assigned = await Student.find({ coordinatorId }).populate('userId', 'name email phone status lastLoginAt role');
+  assigned = assigned.filter((s) => s.userId && s.userId.role === 'student');
+
+  // 2. If fewer than 4 students and unassigned students exist, claim up to 4
+  if (assigned.length < MAX_STUDENTS_PER_COORDINATOR) {
+    const unassigned = await Student.find({
+      $or: [{ coordinatorId: null }, { coordinatorId: { $exists: false } }]
+    }).populate('userId', 'name email phone status lastLoginAt role');
+
+    for (const u of unassigned) {
+      if (assigned.length >= MAX_STUDENTS_PER_COORDINATOR) break;
+      if (u.userId && u.userId.role === 'student') {
+        u.coordinatorId = coordinatorId;
+        await u.save();
+        assigned.push(u);
+      }
+    }
+  }
+
+  // 3. Strictly cap at 4 students
+  return assigned.slice(0, MAX_STUDENTS_PER_COORDINATOR);
+};
+
+const getCoordinatorDashboard = async (coordinatorId) => {
+  const studentDocs = await ensureCoordinatorStudents(coordinatorId);
   const studentIds = studentDocs.map((s) => s._id);
 
-  // Compute Support Priority score for all students
+  // Compute Support Priority score for assigned students (max 4)
   const priorityEvaluations = await Promise.all(
     studentDocs.map(async (st) => {
       const evaluation = await evaluateStudentSupportPriority(st._id);
@@ -41,10 +67,10 @@ const getCoordinatorDashboard = async (coordinatorId) => {
     .filter((p) => p.level === 'HIGH' || p.level === 'URGENT')
     .sort((a, b) => b.score - a.score);
 
-  // Overdue follow-ups
+  // Overdue follow-ups for this coordinator's assigned students
   const now = new Date();
   const overdueFollowUps = await FollowUp.find({
-    coordinatorId,
+    $or: [{ coordinatorId }, { studentId: { $in: studentIds } }],
     dueDate: { $lt: now },
     status: { $in: ['pending', 'in_progress', 'overdue'] }
   })
@@ -54,9 +80,12 @@ const getCoordinatorDashboard = async (coordinatorId) => {
     })
     .sort({ dueDate: 1 });
 
-  // Pending support requests
+  // Pending support requests for this coordinator's assigned students
   const pendingRequests = await SupportRequest.find({
-    $or: [{ assignedCoordinator: coordinatorId }, { assignedCoordinator: null }],
+    $or: [
+      { assignedCoordinator: coordinatorId },
+      { studentId: { $in: studentIds } }
+    ],
     status: { $in: ['pending', 'in_progress'] }
   })
     .populate({
@@ -74,22 +103,25 @@ const getCoordinatorDashboard = async (coordinatorId) => {
       overdueFollowUpsCount: overdueFollowUps.length,
       pendingSupportRequestsCount: pendingRequests.length
     },
-    studentsNeedingAttention: studentsNeedingAttention.slice(0, 5),
-    overdueFollowUps: overdueFollowUps.slice(0, 5),
-    pendingSupportRequests: pendingRequests.slice(0, 5)
+    studentsNeedingAttention: studentsNeedingAttention.slice(0, 4),
+    overdueFollowUps: overdueFollowUps.slice(0, 4),
+    pendingSupportRequests: pendingRequests.slice(0, 4)
   };
 };
 
 const getCoordinatorStudents = async (coordinatorId, filters = {}) => {
-  const query = {};
+  const assigned = await ensureCoordinatorStudents(coordinatorId);
+  let students = assigned;
 
-  if (filters.program) query.program = filters.program;
-  if (filters.centerId) query.centerId = filters.centerId;
-  if (filters.stage) query.stage = filters.stage;
-
-  let students = await Student.find(query)
-    .populate('userId', 'name email phone status lastLoginAt')
-    .sort({ createdAt: -1 });
+  if (filters.program) {
+    students = students.filter((s) => s.program === filters.program);
+  }
+  if (filters.centerId) {
+    students = students.filter((s) => s.centerId === filters.centerId);
+  }
+  if (filters.stage) {
+    students = students.filter((s) => s.stage === filters.stage);
+  }
 
   // Search filter by name or email
   if (filters.search) {
@@ -135,17 +167,18 @@ const getCoordinatorStudents = async (coordinatorId, filters = {}) => {
   // Sort by priority score descending by default
   filtered.sort((a, b) => b.supportPriority.score - a.supportPriority.score);
 
-  // Pagination
+  // Pagination (strict 4 student cap per coordinator)
+  const total = filtered.length;
   const page = parseInt(filters.page, 10) || 1;
-  const limit = parseInt(filters.limit, 10) || 10;
+  const limit = Math.min(parseInt(filters.limit, 10) || 4, MAX_STUDENTS_PER_COORDINATOR);
   const startIndex = (page - 1) * limit;
   const paginated = filtered.slice(startIndex, startIndex + limit);
 
   return {
-    total: filtered.length,
+    total,
     page,
     limit,
-    totalPages: Math.ceil(filtered.length / limit),
+    totalPages: Math.ceil(total / limit) || 1,
     data: paginated
   };
 };

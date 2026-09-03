@@ -33,15 +33,27 @@ export default function StudentList() {
 
   return (
     <div className="space-y-5">
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search students…"
-          className="w-full pl-9 pr-4 py-2.5 border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#AAFF00]"
-        />
+      {/* Header controls & capacity badge */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative max-w-sm w-full">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search your assigned students…"
+            className="w-full pl-9 pr-4 py-2.5 border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#AAFF00]"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto px-3.5 py-1.5 bg-gray-100 rounded-full border border-gray-200">
+          <span className="w-2 h-2 rounded-full bg-[#AAFF00]" />
+          <span className="text-xs font-bold text-gray-800">
+            Assigned: {students.length} / 4 Students
+          </span>
+          <span className="text-[10px] text-gray-500 font-medium">
+            (Max capacity: 4)
+          </span>
+        </div>
       </div>
 
       {loading ? (
