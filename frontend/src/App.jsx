@@ -19,6 +19,7 @@ import Goals from './pages/student/Goals';
 import CareerProfile from './pages/student/CareerProfile';
 import SupportRequests from './pages/student/SupportRequests';
 import AIInsights from './pages/student/AIInsights';
+import StudentJourney from './pages/student/StudentJourney';
 
 // Coordinator pages
 import CoordinatorDashboard from './pages/coordinator/CoordinatorDashboard';
@@ -66,6 +67,9 @@ function AppRoutes() {
         } />
         <Route path="/student/ai" element={
           <ProtectedRoute roles={['student']}><AIInsights /></ProtectedRoute>
+        } />
+        <Route path="/student/journey" element={
+          <ProtectedRoute roles={['student']}><StudentJourney /></ProtectedRoute>
         } />
 
         {/* Coordinator routes */}

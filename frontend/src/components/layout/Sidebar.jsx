@@ -2,7 +2,7 @@ import {
   BookOpen, Brain, Briefcase, ChevronLeft, ChevronRight,
   ClipboardList, GraduationCap, LayoutDashboard, LogOut,
   MessageSquare, Star, Target, Users, AlertTriangle,
-  TrendingUp, HelpCircle
+  TrendingUp, HelpCircle, Compass
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const studentNav = [
   { to: '/student/dashboard',        icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/student/journey',          icon: Compass,          label: 'My Journey' },
   { to: '/student/profile',          icon: GraduationCap,   label: 'My Profile' },
   { to: '/student/academic-records', icon: BookOpen,         label: 'Academics' },
   { to: '/student/skills',           icon: Star,             label: 'Skills' },
