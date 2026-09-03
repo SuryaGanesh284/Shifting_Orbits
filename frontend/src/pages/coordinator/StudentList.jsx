@@ -17,14 +17,17 @@ export default function StudentList() {
 
   useEffect(() => {
     api.get('/coordinator/students')
-      .then(({ data }) => setStudents(data.data || data || []))
+      .then(({ data }) => {
+        const list = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+        setStudents(list);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const filtered = students.filter((s) => {
-    const name = s.name || s.user?.name || '';
-    const email = s.email || s.user?.email || '';
+    const name = s.userId?.name || s.name || s.user?.name || '';
+    const email = s.userId?.email || s.email || s.user?.email || '';
     return name.toLowerCase().includes(search.toLowerCase()) || email.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -49,8 +52,8 @@ export default function StudentList() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((s) => {
             const id = s._id || s.student?._id;
-            const name = s.name || s.user?.name || 'Student';
-            const email = s.email || s.user?.email;
+            const name = s.userId?.name || s.name || s.user?.name || 'Student';
+            const email = s.userId?.email || s.email || s.user?.email;
             const program = s.program || s.student?.program;
             const stage = s.stage || s.student?.stage;
             const completion = s.profileCompletion || s.student?.profileCompletion || 20;

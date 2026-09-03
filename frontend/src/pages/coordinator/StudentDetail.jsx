@@ -38,11 +38,13 @@ export default function StudentDetail() {
   if (!student) return <div className="text-center py-16 text-[#6b7280]">Student not found.</div>;
 
   const profile = student.student || student;
-  const user = student.user || {};
-  const academic = student.academicRecords || [];
-  const skills = student.skills || [];
+  const user = student.student?.user || student.user || student.userId || {};
+  const academic = student.academicOverview?.records || student.academicRecords || [];
+  const skills = student.skillsOverview?.skills || student.skills || [];
+  const goals = student.goalsOverview?.goals || student.goals || [];
   const interactions = student.interactions || [];
-  const progress = student.progress || {};
+  const progress = student.academicOverview || student.progress || {};
+  const career = student.careerReadiness || student.career || {};
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -58,7 +60,7 @@ export default function StudentDetail() {
             </div>
             <div>
               <h2 className="text-xl font-black text-white">{user.name || 'Student'}</h2>
-              <p className="text-gray-400 text-sm">{user.email}</p>
+              <p className="text-gray-400 text-sm">{user.email || profile.email}</p>
               <div className="flex items-center gap-2 mt-1.5">
                 {profile.program && <span className="bg-[#AAFF00] text-[#1a1a1a] text-xs font-bold px-2.5 py-0.5 rounded-full">{profile.program}</span>}
                 {profile.stage && <span className="text-gray-300 text-xs border border-gray-600 px-2.5 py-0.5 rounded-full">{profile.stage}</span>}
@@ -74,10 +76,45 @@ export default function StudentDetail() {
       {/* AI Summary */}
       {aiSummary && (
         <Card>
-          <CardHeader title="AI Coordinator Briefing" />
-          {typeof aiSummary === 'string'
-            ? <p className="text-sm text-[#2d2d2d] whitespace-pre-wrap leading-relaxed">{aiSummary}</p>
-            : <pre className="text-xs text-[#2d2d2d] whitespace-pre-wrap bg-[#fafafa] p-4 rounded-xl">{JSON.stringify(aiSummary, null, 2)}</pre>}
+          <CardHeader title="AI Coordinator Briefing 🤖" />
+          {typeof aiSummary === 'string' ? (
+            <p className="text-sm text-[#2d2d2d] whitespace-pre-wrap leading-relaxed">{aiSummary}</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-3.5 bg-[#f5f5f0] rounded-xl">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Executive Summary</p>
+                <p className="text-sm text-[#1a1a1a] leading-relaxed">{aiSummary.executiveSummary}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                  <p className="text-xs font-bold text-emerald-800 mb-1.5">Key Strengths</p>
+                  <ul className="text-xs text-emerald-900 space-y-1">
+                    {aiSummary.keyStrengths?.map((s, i) => <li key={i}>• {s}</li>)}
+                  </ul>
+                </div>
+                <div className="p-3.5 bg-amber-50/50 border border-amber-100 rounded-xl">
+                  <p className="text-xs font-bold text-amber-800 mb-1.5">Primary Focus / Concerns</p>
+                  <ul className="text-xs text-amber-900 space-y-1">
+                    {aiSummary.primaryConcerns?.map((c, i) => <li key={i}>• {c}</li>)}
+                  </ul>
+                </div>
+              </div>
+              {aiSummary.suggestedDiscussionPoints?.length > 0 && (
+                <div className="p-3.5 bg-[#fafafa] border border-[#e5e5e5] rounded-xl">
+                  <p className="text-xs font-bold text-gray-700 mb-1.5">Suggested Discussion Points</p>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    {aiSummary.suggestedDiscussionPoints.map((p, i) => <li key={i}>✓ {p}</li>)}
+                  </ul>
+                </div>
+              )}
+              {aiSummary.recommendedAction && (
+                <div className="p-3.5 bg-[#1a1a1a] text-white rounded-xl text-xs">
+                  <span className="text-[#AAFF00] font-bold uppercase tracking-wider mr-2">Recommended Action:</span>
+                  <span>{aiSummary.recommendedAction}</span>
+                </div>
+              )}
+            </div>
+          )}
         </Card>
       )}
 
@@ -94,13 +131,13 @@ export default function StudentDetail() {
       {tab === 'Overview' && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Academic Records', value: progress.totalAcademicRecords ?? academic.length },
-            { label: 'Skills', value: progress.totalSkills ?? skills.length },
-            { label: 'Goals', value: progress.totalGoals ?? '—' },
-            { label: 'Support Requests', value: progress.totalSupportRequests ?? '—' },
+            { label: 'Academic Records', value: academic.length },
+            { label: 'Skills', value: skills.length },
+            { label: 'Goals', value: goals.length },
+            { label: 'Support Requests', value: student.supportRequests?.length ?? 0 },
           ].map(({ label, value }) => (
             <div key={label} className="bg-white border border-[#e5e5e5] rounded-2xl p-5 text-center">
-              <p className="text-2xl font-black text-[#1a1a1a]">{value ?? '—'}</p>
+              <p className="text-2xl font-black text-[#1a1a1a]">{value ?? '0'}</p>
               <p className="text-xs text-[#6b7280] mt-1">{label}</p>
             </div>
           ))}
@@ -137,14 +174,15 @@ export default function StudentDetail() {
                 <thead><tr className="border-b border-[#f0f0f0]">{['Subject', 'Year', 'Term', 'Score', 'Attendance'].map((h) => <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-[#6b7280] uppercase">{h}</th>)}</tr></thead>
                 <tbody>
                   {academic.map((r) => {
-                    const pct = Math.round((r.score / r.maxScore) * 100);
+                    const max = r.maxScore || 100;
+                    const pct = Math.round((r.score / max) * 100);
                     const c = pct >= 75 ? 'text-emerald-600' : pct >= 50 ? 'text-yellow-600' : 'text-red-500';
                     return (
                       <tr key={r._id} className="border-b border-[#f9f9f9] hover:bg-[#fafafa]">
                         <td className="py-3 px-3 font-medium">{r.subject}</td>
                         <td className="py-3 px-3 text-[#6b7280]">{r.academicYear}</td>
                         <td className="py-3 px-3 text-[#6b7280]">{r.term}</td>
-                        <td className={`py-3 px-3 font-semibold ${c}`}>{r.score}/{r.maxScore}</td>
+                        <td className={`py-3 px-3 font-semibold ${c}`}>{r.score}/{max}</td>
                         <td className="py-3 px-3 text-[#6b7280]">{r.attendance}%</td>
                       </tr>
                     );

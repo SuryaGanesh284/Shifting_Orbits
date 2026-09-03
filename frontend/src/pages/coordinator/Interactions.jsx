@@ -72,7 +72,7 @@ export default function Interactions() {
 
   const studentName = (s) => {
     if (!s) return 'Student';
-    return s.name || s.user?.name || 'Student';
+    return s.userId?.name || s.name || s.user?.name || s.studentId?.userId?.name || s.studentId?.name || 'Student';
   };
 
   return (

@@ -76,7 +76,7 @@ export default function FollowUps() {
     finally { setSaving(false); }
   };
 
-  const studentName = (s) => s?.name || s?.user?.name || 'Student';
+  const studentName = (s) => s?.userId?.name || s?.name || s?.user?.name || s?.studentId?.userId?.name || 'Student';
 
   return (
     <div className="space-y-5">

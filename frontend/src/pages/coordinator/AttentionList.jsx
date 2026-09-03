@@ -32,7 +32,7 @@ export default function AttentionList() {
         <div className="space-y-3">
           {students.map((s) => {
             const id = s._id || s.student?._id;
-            const name = s.name || s.user?.name || 'Student';
+            const name = s.userId?.name || s.name || s.user?.name || s.student?.userId?.name || s.student?.name || 'Student';
             const stage = s.stage || s.student?.stage;
             const riskScore = s.riskScore || s.risk?.score;
             const reasons = s.reasons || s.risk?.reasons || [];
