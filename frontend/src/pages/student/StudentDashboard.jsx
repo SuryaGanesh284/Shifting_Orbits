@@ -6,23 +6,27 @@ import { statusBadge } from '../../components/ui/Badge';
 import {
   BookOpen,
   Brain,
-  HelpCircle,
   Star,
   Target,
   Activity,
   TrendingUp,
-  Sparkles,
   Calendar,
-  CheckCircle2,
-  Clock,
   ArrowRight,
-  Layers,
   Award
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import { format } from 'date-fns';
 
+const safeFormatDate = (dateVal, fmt = 'dd MMM yyyy') => {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? '' : format(d, fmt);
+  } catch {
+    return '';
+  }
+};
 /* -------------------------------------------------------------
  * Component 1: Interactive Academic Performance & Attendance Trend
  * ----------------------------------------------------------- */
@@ -178,7 +182,7 @@ function AcademicTrendChart({ data }) {
         >
           <div>
             <p className="font-bold text-[#AAFF00]">{hovered.subject || 'Assessment'}</p>
-            <p className="text-[10px] text-gray-400">{hovered.term || 'Term 1'} · {hovered.date ? format(new Date(hovered.date), 'dd MMM yyyy') : ''}</p>
+            <p className="text-[10px] text-gray-400">{hovered.term || 'Term 1'} {hovered.date ? `· ${safeFormatDate(hovered.date)}` : ''}</p>
           </div>
           <div className="flex items-center gap-3 border-l border-white/20 pl-3">
             <div>
@@ -369,6 +373,7 @@ export default function StudentDashboard() {
 
   const student = dash?.student || {};
   const progress = dash?.progress || dash?.summary || {};
+  const summary = dash?.summary || dash?.progress || {};
   const recentGoals = dash?.recentGoals || dash?.upcomingGoals || [];
   const recentInteractions = dash?.recentInteractions || [];
   const scoreTrend = dash?.scoreTrend || [];
@@ -617,7 +622,7 @@ export default function StudentDashboard() {
                   {g.targetDate && (
                     <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
                       <Calendar size={10} />
-                      Due {format(new Date(g.targetDate), 'dd MMM yyyy')}
+                      Due {safeFormatDate(g.targetDate)}
                     </p>
                   )}
                 </li>
@@ -658,7 +663,7 @@ export default function StudentDashboard() {
                         {i.type?.replace(/_/g, ' ')}
                       </p>
                       <p className="text-[10px] text-gray-400 shrink-0">
-                        {i.interactionDate ? format(new Date(i.interactionDate), 'dd MMM yyyy') : ''}
+                        {safeFormatDate(i.interactionDate)}
                       </p>
                     </div>
                     <p className="text-xs text-[#4b5563] mt-0.5 line-clamp-2">{i.notes || 'No meeting notes recorded'}</p>
